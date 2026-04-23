@@ -24,8 +24,10 @@ services:
 
 volumes:
   nadovibe_repositories:
+    external: true
     name: nadovibe_repositories
   nadovibe_workspaces:
+    external: true
     name: nadovibe_workspaces
   nadovibe_artifacts:
     name: nadovibe_artifacts

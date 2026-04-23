@@ -40,6 +40,7 @@ services:
 
 volumes:
   nadovibe_app_server_state:
+    external: true
     name: nadovibe_app_server_state
   nadovibe_adapter_logs:
     name: nadovibe_adapter_logs
