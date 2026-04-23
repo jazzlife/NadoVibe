@@ -13,10 +13,14 @@ import {
   parseEnqueueCommandRequest,
   parseFinalReviewDecisionRequest,
   parseHunkDecisionRequest,
+  parseMobilePushRegistrationRequest,
+  parseNotificationReadRequest,
+  parseNotificationSettingsRequest,
   parseSupervisorControlRequest,
   parseWorkspaceFileWriteRequest,
   parseWorkspaceSearchRequest,
   publicProjection,
+  rebuildMobileCommandReviewProjection,
   rebuildControlRoomProjection,
   replayStreamFromOffset
 } from "@nadovibe/api-contract";
@@ -34,6 +38,9 @@ import type {
   FileTreeItem,
   FinalReviewDecisionRequest,
   HunkDecisionRequest,
+  MobilePushRegistrationRequest,
+  NotificationReadRequest,
+  NotificationSettingsRequest,
   SupervisorControlRequest
 } from "@nadovibe/api-contract";
 import {
@@ -143,6 +150,25 @@ const server = http.createServer(async (request, response) => {
     if (request.method === "GET" && request.url === "/api/admin/capacity") {
       const readModels = rebuildPlatformReadModels(core.events.readAll());
       sendJson(response, 200, { ...readModels.resources, queueDepth: 0 });
+      return;
+    }
+    if (request.method === "GET" && request.url === "/api/mobile/review") {
+      sendJson(response, 200, mobileProjection());
+      return;
+    }
+    if (request.method === "POST" && request.url === "/api/mobile/push/register") {
+      const body = parseMobilePushRegistrationRequest(await readJson(request));
+      sendJson(response, 202, registerMobilePush(body, requestId));
+      return;
+    }
+    if (request.method === "POST" && request.url === "/api/mobile/notification-settings") {
+      const body = parseNotificationSettingsRequest(await readJson(request));
+      sendJson(response, 202, updateNotificationSettings(body, requestId));
+      return;
+    }
+    if (request.method === "POST" && request.url === "/api/mobile/notifications/read") {
+      const body = parseNotificationReadRequest(await readJson(request));
+      sendJson(response, 202, markNotificationRead(body, requestId));
       return;
     }
     if (request.method === "GET" && request.url?.startsWith("/api/workspace/files/tree")) {
@@ -356,6 +382,16 @@ function controlSupervisor(body: SupervisorControlRequest, requestId: string): C
       core.recordSupervisorDecision(decision, context);
       applySupervisorStateTransition(body.runId, body.action, context);
     }
+    if (body.action === "retry") {
+      const recovery = projection("operator").recoveryQueue.find((item) => item.runId === body.runId && item.state !== "resolved");
+      if (recovery) {
+        appendEvent(recovery.recoveryId, "Recovery", "RecoveryUpdated", {
+          ...recovery,
+          state: "resolved",
+          nextAction: "재시도 요청 완료"
+        }, context);
+      }
+    }
     appendEvent(`supervisor_action_${decision.id}`, "SupervisorDecision", "SupervisorControlActionRecorded", {
       runId: body.runId,
       action: body.action,
@@ -461,6 +497,52 @@ function decideHunk(body: HunkDecisionRequest, requestId: string): ControlRoomPr
   });
 }
 
+function registerMobilePush(body: MobilePushRegistrationRequest, requestId: string) {
+  return withIdempotency(body.idempotencyKey, "registerMobilePush", `${body.workspaceId}:${body.permission}:${body.routeOnClick}`, () => {
+    const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
+    appendEvent(`mobile_push_${body.workspaceId}`, "MobileNotification", "MobilePushRegistrationChanged", {
+      workspaceId: body.workspaceId,
+      permission: body.permission,
+      registered: body.permission === "granted" || body.permission === "default",
+      endpointLabel: summarizeEndpoint(body.endpoint),
+      routeOnClick: body.routeOnClick
+    }, context);
+    appendEvent(`notification_mobile_push_${body.workspaceId}`, "Notification", "NotificationRaised", {
+      notificationId: `notification_mobile_push_${sanitizeId(body.workspaceId)}`,
+      title: "모바일 알림 경로 준비",
+      body: "필요한 승인과 복구 알림이 모바일 inbox로 연결됩니다.",
+      route: body.routeOnClick,
+      unread: true
+    }, context);
+    return mobileProjection();
+  });
+}
+
+function updateNotificationSettings(body: NotificationSettingsRequest, requestId: string) {
+  return withIdempotency(body.idempotencyKey, "updateNotificationSettings", `${body.workspaceId}:${body.enabled}:${body.approvals}:${body.recovery}:${body.finalReview}`, () => {
+    const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
+    appendEvent(`mobile_settings_${body.workspaceId}`, "MobileNotification", "NotificationSettingsUpdated", body, context);
+    appendEvent(`notification_mobile_settings_${body.workspaceId}`, "Notification", "NotificationRaised", {
+      notificationId: `notification_mobile_settings_${sanitizeId(body.workspaceId)}`,
+      title: "알림 설정 저장",
+      body: "사용자 결정이 필요한 항목만 모바일 inbox에 표시합니다.",
+      route: "/mobile#notification-settings",
+      unread: true
+    }, context);
+    return mobileProjection();
+  });
+}
+
+function markNotificationRead(body: NotificationReadRequest, requestId: string) {
+  return withIdempotency(body.idempotencyKey, "markNotificationRead", body.notificationId, () => {
+    const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
+    appendEvent(body.notificationId, "Notification", "NotificationRead", {
+      notificationId: body.notificationId
+    }, context);
+    return mobileProjection();
+  });
+}
+
 function seedAgentControlSurface(runId: string, workspaceId: string, repositoryId: string, objective: string, context: CoreCommandContext): void {
   const supervisorAgentId = `agent_supervisor_${sanitizeId(runId)}`;
   const taskAgentId = `agent_task_${sanitizeId(runId)}`;
@@ -516,6 +598,13 @@ function seedAgentControlSurface(runId: string, workspaceId: string, repositoryI
     state: "requested",
     destructive: false
   }, context);
+  appendEvent(`notification_${runId}_approval`, "Notification", "NotificationRaised", {
+    notificationId: `notification_${sanitizeId(runId)}_approval`,
+    title: "승인 검토 필요",
+    body: "작업 범위 변경 요청을 모바일에서 검토할 수 있습니다.",
+    route: `/mobile#approval-${sanitizeId(`approval_${sanitizeId(runId)}_scope`)}`,
+    unread: true
+  }, context);
   appendEvent(`conflict_${runId}_initial`, "Conflict", "ConflictDetected", {
     conflictId: `conflict_${sanitizeId(runId)}_initial`,
     runId,
@@ -523,12 +612,26 @@ function seedAgentControlSurface(runId: string, workspaceId: string, repositoryI
     summary: "UI shell 교체 중 hunk 단위 검토가 필요합니다.",
     state: "detected"
   }, context);
+  appendEvent(`notification_${runId}_conflict`, "Notification", "NotificationRaised", {
+    notificationId: `notification_${sanitizeId(runId)}_conflict`,
+    title: "충돌 검토",
+    body: "파일 충돌 요약을 확인하고 escalation 여부를 결정하십시오.",
+    route: `/mobile#conflict-${sanitizeId(`conflict_${sanitizeId(runId)}_initial`)}`,
+    unread: true
+  }, context);
   appendEvent(`recovery_${runId}_editor`, "Recovery", "RecoveryQueued", {
     recoveryId: `recovery_${sanitizeId(runId)}_editor`,
     runId,
     title: "IDE 세션 재발급 준비",
     state: "ready_to_retry",
     nextAction: "세션 재발급"
+  }, context);
+  appendEvent(`notification_${runId}_recovery`, "Notification", "NotificationRaised", {
+    notificationId: `notification_${sanitizeId(runId)}_recovery`,
+    title: "복구 결정 준비",
+    body: "워크스페이스 복구 action을 모바일에서 재시도할 수 있습니다.",
+    route: `/mobile#recovery-${sanitizeId(`recovery_${sanitizeId(runId)}_editor`)}`,
+    unread: true
   }, context);
   appendEvent(`diff_${runId}_web`, "Diff", "DiffUpdated", {
     path: "apps/web/src/server.ts",
@@ -636,6 +739,10 @@ function projection(role: "user" | "operator"): ControlRoomProjectionResponse {
   return rebuildControlRoomProjection(core.events.readAll(), { role, fileTree: readFileTree("") });
 }
 
+function mobileProjection() {
+  return rebuildMobileCommandReviewProjection(core.events.readAll());
+}
+
 function ensureDefaultSeed(requestId: string): void {
   if (!core.getIdentitySeed(defaultIdentity.tenantId, defaultIdentity.userId, defaultIdentity.workspaceId)) {
     seedIdentity(defaultIdentity, requestId);
@@ -672,7 +779,7 @@ function readFileTree(requestedPath: string): readonly FileTreeItem[] {
   const base = safeWorkspacePath(requestedPath);
   const items: FileTreeItem[] = [];
   walk(base, path.relative(workspaceRoot, base), 0, items);
-  return items.slice(0, 180);
+  return items.slice(0, 320);
 }
 
 function searchWorkspace(workspaceId: string, query: string, requestedPath: string) {
@@ -714,7 +821,7 @@ function searchWalk(absolute: string, query: string, results: Array<{ path: stri
 }
 
 function walk(absolute: string, relativePath: string, depth: number, items: FileTreeItem[]): void {
-  if (depth > 2 || items.length >= 180) return;
+  if (depth > 2 || items.length >= 320) return;
   const entries = readdirSync(absolute, { withFileTypes: true })
     .filter((entry) => ![".git", "node_modules", "dist", "coverage", ".DS_Store"].includes(entry.name))
     .sort((left, right) => Number(right.isDirectory()) - Number(left.isDirectory()) || left.name.localeCompare(right.name))
@@ -741,6 +848,11 @@ function safeWorkspacePath(requestedPath: string): string {
 
 function sanitizeId(value: string): string {
   return value.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80);
+}
+
+function summarizeEndpoint(value: string): string {
+  const suffix = sanitizeId(value).slice(-12);
+  return suffix ? `registered_${suffix}` : "registered";
 }
 
 async function readJson(request: http.IncomingMessage): Promise<unknown> {

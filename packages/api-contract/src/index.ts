@@ -160,6 +160,31 @@ export interface HunkDecisionRequest {
   readonly idempotencyKey: string;
 }
 
+export type MobilePushPermissionState = "default" | "granted" | "denied" | "unsupported";
+
+export interface MobilePushRegistrationRequest {
+  readonly workspaceId: string;
+  readonly permission: MobilePushPermissionState;
+  readonly endpoint: string;
+  readonly routeOnClick: string;
+  readonly idempotencyKey: string;
+}
+
+export interface NotificationSettingsRequest {
+  readonly workspaceId: string;
+  readonly enabled: boolean;
+  readonly approvals: boolean;
+  readonly recovery: boolean;
+  readonly finalReview: boolean;
+  readonly quietHeavyWork: boolean;
+  readonly idempotencyKey: string;
+}
+
+export interface NotificationReadRequest {
+  readonly notificationId: string;
+  readonly idempotencyKey: string;
+}
+
 export interface WorkspaceSummary {
   readonly workspaceId: string;
   readonly name: string;
@@ -357,6 +382,77 @@ export interface NotificationInboxItem {
   readonly unread: boolean;
 }
 
+export type MobileNextActionKind = "approval" | "conflict" | "recovery" | "final_review" | "run" | "notification";
+
+export interface MobileNextActionItem {
+  readonly actionId: string;
+  readonly kind: MobileNextActionKind;
+  readonly title: string;
+  readonly body: string;
+  readonly route: string;
+  readonly priority: "critical" | "normal" | "low";
+  readonly destructive: boolean;
+  readonly runId?: string;
+  readonly confirmationLabel?: string;
+}
+
+export interface MobileDiffSummary {
+  readonly fileCount: number;
+  readonly hunkCount: number;
+  readonly additions: number;
+  readonly deletions: number;
+  readonly riskyFiles: readonly string[];
+  readonly testStatus: "pending" | "passed" | "needs_review" | "unknown";
+  readonly hunks: readonly {
+    readonly path: string;
+    readonly hunkId: string;
+    readonly title: string;
+    readonly state: DiffHunk["state"];
+  }[];
+}
+
+export interface MobileNotificationSettingsProjection {
+  readonly workspaceId: string;
+  readonly enabled: boolean;
+  readonly approvals: boolean;
+  readonly recovery: boolean;
+  readonly finalReview: boolean;
+  readonly quietHeavyWork: boolean;
+}
+
+export interface MobilePushRegistrationProjection {
+  readonly workspaceId: string;
+  readonly permission: MobilePushPermissionState;
+  readonly registered: boolean;
+  readonly endpointLabel?: string;
+  readonly routeOnClick: string;
+}
+
+export interface MobileServiceStatusProjection {
+  readonly realtime: "connected" | "reconnecting" | "offline";
+  readonly workspace: "ready" | "preparing" | "recovering" | "stopped";
+  readonly message: string;
+  readonly workspaceMessage: string;
+}
+
+export interface MobileCommandReviewProjectionResponse {
+  readonly generatedAt: string;
+  readonly lastOffset: number;
+  readonly inbox: readonly NotificationInboxItem[];
+  readonly nextActions: readonly MobileNextActionItem[];
+  readonly runs: readonly RunSummary[];
+  readonly agents: readonly AgentHierarchyItem[];
+  readonly approvals: readonly ApprovalInboxProjectionItem[];
+  readonly conflicts: readonly ConflictQueueItem[];
+  readonly recovery: readonly RecoveryQueueItem[];
+  readonly diffSummary: MobileDiffSummary;
+  readonly finalReview: FinalReviewGateProjection;
+  readonly serviceStatus: MobileServiceStatusProjection;
+  readonly notificationSettings: MobileNotificationSettingsProjection;
+  readonly pushRegistration: MobilePushRegistrationProjection;
+  readonly reconnect: ControlRoomProjectionResponse["reconnect"];
+}
+
 export interface ControlRoomProjectionResponse {
   readonly generatedAt: string;
   readonly role: UserRole;
@@ -409,6 +505,14 @@ export function requireNumber(record: Record<string, unknown>, key: string): num
   const value = record[key];
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new Error(`${key} must be a finite number`);
+  }
+  return value;
+}
+
+export function requireBoolean(record: Record<string, unknown>, key: string): boolean {
+  const value = record[key];
+  if (typeof value !== "boolean") {
+    throw new Error(`${key} must be a boolean`);
   }
   return value;
 }
@@ -574,6 +678,42 @@ export function parseHunkDecisionRequest(value: unknown): HunkDecisionRequest {
     hunkId: requireString(record, "hunkId"),
     decision,
     reason: requireString(record, "reason"),
+    idempotencyKey: requireString(record, "idempotencyKey")
+  };
+}
+
+export function parseMobilePushRegistrationRequest(value: unknown): MobilePushRegistrationRequest {
+  const record = requireObject(value, "MobilePushRegistrationRequest");
+  const permission = requireString(record, "permission");
+  if (!["default", "granted", "denied", "unsupported"].includes(permission)) {
+    throw new Error("permission is invalid");
+  }
+  return {
+    workspaceId: requireString(record, "workspaceId"),
+    permission: permission as MobilePushPermissionState,
+    endpoint: requireString(record, "endpoint"),
+    routeOnClick: requireString(record, "routeOnClick"),
+    idempotencyKey: requireString(record, "idempotencyKey")
+  };
+}
+
+export function parseNotificationSettingsRequest(value: unknown): NotificationSettingsRequest {
+  const record = requireObject(value, "NotificationSettingsRequest");
+  return {
+    workspaceId: requireString(record, "workspaceId"),
+    enabled: requireBoolean(record, "enabled"),
+    approvals: requireBoolean(record, "approvals"),
+    recovery: requireBoolean(record, "recovery"),
+    finalReview: requireBoolean(record, "finalReview"),
+    quietHeavyWork: requireBoolean(record, "quietHeavyWork"),
+    idempotencyKey: requireString(record, "idempotencyKey")
+  };
+}
+
+export function parseNotificationReadRequest(value: unknown): NotificationReadRequest {
+  const record = requireObject(value, "NotificationReadRequest");
+  return {
+    notificationId: requireString(record, "notificationId"),
     idempotencyKey: requireString(record, "idempotencyKey")
   };
 }
@@ -880,6 +1020,74 @@ export function rebuildControlRoomProjection(
   return projection;
 }
 
+export function rebuildMobileCommandReviewProjection(events: readonly DomainEvent[]): MobileCommandReviewProjectionResponse {
+  const control = rebuildControlRoomProjection(events, { role: "user", fileTree: [] });
+  const workspaceId = control.workspaces[0]?.workspaceId ?? "workspace_dev";
+  const readNotifications = new Set<string>();
+  let notificationSettings: MobileNotificationSettingsProjection = {
+    workspaceId,
+    enabled: true,
+    approvals: true,
+    recovery: true,
+    finalReview: true,
+    quietHeavyWork: true
+  };
+  let pushRegistration: MobilePushRegistrationProjection = {
+    workspaceId,
+    permission: "default",
+    registered: false,
+    routeOnClick: "/mobile#inbox"
+  };
+
+  for (const event of events) {
+    if (event.type === "NotificationRead") {
+      const notificationId = readString(event.payload, "notificationId");
+      if (notificationId) readNotifications.add(notificationId);
+    }
+    if (event.type === "NotificationSettingsUpdated") {
+      const payload = event.payload as NotificationSettingsRequest;
+      notificationSettings = {
+        workspaceId: payload.workspaceId,
+        enabled: payload.enabled,
+        approvals: payload.approvals,
+        recovery: payload.recovery,
+        finalReview: payload.finalReview,
+        quietHeavyWork: payload.quietHeavyWork
+      };
+    }
+    if (event.type === "MobilePushRegistrationChanged") {
+      pushRegistration = {
+        ...pushRegistration,
+        ...(event.payload as MobilePushRegistrationProjection)
+      };
+    }
+  }
+
+  const inbox = control.notifications.map((item) => ({
+    ...item,
+    unread: item.unread && !readNotifications.has(item.notificationId)
+  }));
+  const projection: MobileCommandReviewProjectionResponse = {
+    generatedAt: control.generatedAt,
+    lastOffset: control.lastOffset,
+    inbox,
+    nextActions: buildMobileNextActions(control, inbox),
+    runs: control.runs,
+    agents: control.agentHierarchy,
+    approvals: control.approvalInbox,
+    conflicts: control.conflictQueue,
+    recovery: control.recoveryQueue,
+    diffSummary: summarizeDiffForMobile(control),
+    finalReview: control.finalReview,
+    serviceStatus: summarizeServiceForMobile(control),
+    notificationSettings,
+    pushRegistration,
+    reconnect: control.reconnect
+  };
+  assertPublicResponseSafe(projection);
+  return projection;
+}
+
 export function replayStreamFromOffset(events: readonly unknown[], afterOffset: number): readonly RealtimeFrame[] {
   return events.slice(afterOffset).map((event, index) => ({ offset: afterOffset + index + 1, event }));
 }
@@ -1008,6 +1216,113 @@ function buildLifecycle(run: RunSummary | undefined): readonly LifecycleStep[] {
     label: step[1],
     state: activeIndex === -1 ? "upcoming" : index < activeIndex ? "done" : index === activeIndex ? "active" : "upcoming"
   }));
+}
+
+function buildMobileNextActions(control: ControlRoomProjectionResponse, inbox: readonly NotificationInboxItem[]): readonly MobileNextActionItem[] {
+  const actions: MobileNextActionItem[] = [];
+  for (const approval of control.approvalInbox.filter((item) => item.state === "requested")) {
+    const action: MobileNextActionItem = {
+      actionId: approval.approvalId,
+      kind: "approval",
+      title: approval.destructive ? "확인 후 승인" : "승인 검토",
+      body: approval.reason,
+      route: `#approval-${approval.approvalId}`,
+      priority: approval.destructive ? "critical" : "normal",
+      destructive: approval.destructive
+    };
+    if (approval.runId) (action as { runId: string }).runId = approval.runId;
+    if (approval.destructive) (action as { confirmationLabel: string }).confirmationLabel = "승인 전 확인";
+    actions.push(action);
+  }
+  for (const conflict of control.conflictQueue.filter((item) => item.state === "detected")) {
+    actions.push({
+      actionId: conflict.conflictId,
+      kind: "conflict",
+      title: "충돌 검토",
+      body: conflict.summary,
+      route: `#conflict-${conflict.conflictId}`,
+      priority: "normal",
+      destructive: false,
+      runId: conflict.runId
+    });
+  }
+  for (const recovery of control.recoveryQueue.filter((item) => item.state !== "resolved")) {
+    actions.push({
+      actionId: recovery.recoveryId,
+      kind: "recovery",
+      title: recovery.title,
+      body: recovery.nextAction,
+      route: `#recovery-${recovery.recoveryId}`,
+      priority: recovery.state === "recovering" ? "critical" : "normal",
+      destructive: false,
+      runId: recovery.runId
+    });
+  }
+  if (control.finalReview.runId && (control.finalReview.state === "ready" || control.finalReview.state === "changes_requested")) {
+    actions.push({
+      actionId: `final_${control.finalReview.runId}`,
+      kind: "final_review",
+      title: "최종 검토",
+      body: control.finalReview.state === "ready" ? "검증 결과를 확인하고 최종 승인할 수 있습니다." : "변경 요청 반영 여부를 확인하십시오.",
+      route: "#final-review",
+      priority: "normal",
+      destructive: false,
+      runId: control.finalReview.runId
+    });
+  }
+  for (const notification of inbox.filter((item) => item.unread)) {
+    actions.push({
+      actionId: notification.notificationId,
+      kind: "notification",
+      title: notification.title,
+      body: notification.body,
+      route: notification.route,
+      priority: "low",
+      destructive: false
+    });
+  }
+  if (!actions.length && control.runs[0]) {
+    actions.push({
+      actionId: control.runs[0].runId,
+      kind: "run",
+      title: "진행 상태 확인",
+      body: control.runs[0].objective,
+      route: "#run-detail",
+      priority: "low",
+      destructive: false,
+      runId: control.runs[0].runId
+    });
+  }
+  const priorityRank: Record<MobileNextActionItem["priority"], number> = { critical: 0, normal: 1, low: 2 };
+  return actions.sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority]).slice(0, 10);
+}
+
+function summarizeDiffForMobile(control: ControlRoomProjectionResponse): MobileDiffSummary {
+  const files = control.diff;
+  const hunks = files.flatMap((file) => file.hunks.map((hunk) => ({ path: file.path, hunkId: hunk.hunkId, title: hunk.title, state: hunk.state })));
+  const terminalText = control.terminal.map((item) => item.text).join("\n").toLowerCase();
+  const hasPendingTest = control.artifacts.some((item) => item.label.includes("테스트") && item.sizeLabel === "pending");
+  const testStatus: MobileDiffSummary["testStatus"] = hasPendingTest ? "pending" : terminalText.includes("failed") ? "needs_review" : terminalText.includes("passed") ? "passed" : "unknown";
+  return {
+    fileCount: files.length,
+    hunkCount: hunks.length,
+    additions: files.reduce((sum, file) => sum + file.additions, 0),
+    deletions: files.reduce((sum, file) => sum + file.deletions, 0),
+    riskyFiles: files.map((file) => file.path).filter((file) => /(server|infra|docker|security|gateway)/i.test(file)).slice(0, 5),
+    testStatus,
+    hunks
+  };
+}
+
+function summarizeServiceForMobile(control: ControlRoomProjectionResponse): MobileServiceStatusProjection {
+  const workspace = control.workspaces[0];
+  const runtime = control.serviceHealth.find((item) => item.service === "Workspace Runtime");
+  return {
+    realtime: control.reconnect.state,
+    workspace: workspace?.status ?? "stopped",
+    message: control.reconnect.message,
+    workspaceMessage: runtime?.detail ?? "워크스페이스 상태를 확인하고 있습니다."
+  };
 }
 
 function contractToProjection(contract: AgentTaskContract): AgentContractItem {

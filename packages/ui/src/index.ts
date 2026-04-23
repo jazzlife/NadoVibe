@@ -279,6 +279,110 @@ export function renderTabletWorkbenchHtml(): string {
 </html>`;
 }
 
+export function renderMobileCommandReviewHtml(): string {
+  return `<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0F3F3B" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <title>NadoVibe Mobile Command</title>
+  <style>${renderShellCss()}${renderMobileCommandReviewCss()}</style>
+</head>
+<body>
+  <a class="skip-link" href="#mobileMain">Skip to mobile command surface</a>
+  <div id="mobileApp" class="mobile-shell" data-connection="connected">
+    <header class="mobile-topbar" aria-label="Mobile command header">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">NV</span>
+        <div>
+          <strong>Mobile Command</strong>
+          <span id="mobileWorkspaceLabel">승인, 복구, 최종 검토</span>
+        </div>
+      </div>
+      <button id="registerPushButton" class="mobile-icon-button" type="button" aria-label="Register mobile notifications">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 0 1-6 0" /></svg>
+      </button>
+    </header>
+    <section id="mobileServiceStatus" class="mobile-status-strip" role="status">연결 상태를 확인하고 있습니다.</section>
+    <main id="mobileMain" class="mobile-main">
+      <section id="mobileNextAction" class="mobile-hero-panel" aria-label="Next action"></section>
+      <nav class="mobile-segmented" aria-label="Mobile review filters">
+        <a href="#inbox" data-mobile-tab="inbox">Inbox</a>
+        <a href="#run-detail" data-mobile-tab="run">Run</a>
+        <a href="#review" data-mobile-tab="review">Review</a>
+        <a href="#notification-settings" data-mobile-tab="notify">Notify</a>
+      </nav>
+      <section id="inbox" class="mobile-section">
+        <div class="mobile-section-heading"><h2>Inbox</h2><span id="mobileInboxCount" class="count-badge">0</span></div>
+        <div id="mobileInboxList" class="mobile-list"></div>
+      </section>
+      <section id="run-detail" class="mobile-section">
+        <div class="mobile-section-heading"><h2>Run Detail</h2></div>
+        <div id="mobileRunDetail" class="mobile-list"></div>
+        <div id="mobileAgentRoster" class="mobile-list"></div>
+      </section>
+      <section id="review" class="mobile-section">
+        <div class="mobile-section-heading"><h2>Review</h2></div>
+        <div id="mobileApprovalReview" class="mobile-list"></div>
+        <div id="mobileConflictReview" class="mobile-list"></div>
+        <div id="mobileRecoveryDecision" class="mobile-list"></div>
+        <details id="mobileDiffSummary" class="mobile-details" open>
+          <summary>Diff Summary</summary>
+          <div id="mobileDiffBody"></div>
+        </details>
+        <div id="mobileFinalReview" class="mobile-list"></div>
+      </section>
+      <section id="command" class="mobile-section">
+        <div class="mobile-section-heading"><h2>Quick Command</h2></div>
+        <form id="mobileQuickCommandForm" class="mobile-command-form">
+          <label><span>Template</span><select id="mobileCommandTemplate">
+            <option value="검증 결과를 요약해 보고하십시오">검증 요약</option>
+            <option value="현재 blocker를 정리하고 다음 action을 제안하십시오">Blocker 정리</option>
+            <option value="승인 전 위험 변경을 다시 확인하십시오">위험 변경 확인</option>
+          </select></label>
+          <label><span>Target run</span><select id="mobileCommandRun"></select></label>
+          <label><span>Free text</span><textarea id="mobileCommandText" rows="3" placeholder="추가 지시를 입력하십시오"></textarea></label>
+          <button id="mobileCommandSubmit" class="mobile-primary" type="submit">Send Command</button>
+        </form>
+        <div id="mobileCommandLog" class="mobile-list"></div>
+      </section>
+      <section id="notification-settings" class="mobile-section">
+        <div class="mobile-section-heading"><h2>Notification Settings</h2><span id="mobileNotificationState" class="state-badge">ready</span></div>
+        <form id="mobileNotificationSettings" class="mobile-settings-form">
+          <label><input id="notifyEnabled" type="checkbox" /> Enable mobile inbox alerts</label>
+          <label><input id="notifyApprovals" type="checkbox" /> Approval review</label>
+          <label><input id="notifyRecovery" type="checkbox" /> Recovery decisions</label>
+          <label><input id="notifyFinal" type="checkbox" /> Final review</label>
+          <label><input id="notifyQuiet" type="checkbox" /> Quiet background scheduling</label>
+          <button class="mobile-secondary" type="submit">Save Settings</button>
+        </form>
+      </section>
+    </main>
+    <nav class="mobile-bottom-nav" aria-label="Thumb navigation">
+      <a href="#inbox">Inbox</a>
+      <a href="#run-detail">Run</a>
+      <a href="#review">Review</a>
+      <a href="#command">Command</a>
+    </nav>
+    <div id="mobileConfirmSheet" class="mobile-confirm-backdrop" hidden>
+      <section class="mobile-confirm-sheet" role="dialog" aria-modal="true" aria-labelledby="mobileConfirmTitle">
+        <h2 id="mobileConfirmTitle">확인이 필요합니다</h2>
+        <p id="mobileConfirmBody">이 action을 실행하시겠습니까?</p>
+        <div class="mobile-confirm-actions">
+          <button id="mobileConfirmCancel" class="mobile-secondary" type="button">Cancel</button>
+          <button id="mobileConfirmApply" class="mobile-danger" type="button">Confirm</button>
+        </div>
+      </section>
+    </div>
+  </div>
+  <script src="/assets/gateway-client.js"></script>
+  <script src="/assets/mobile-command-review.js"></script>
+</body>
+</html>`;
+}
+
 export function renderManifest(): string {
   return JSON.stringify(
     {
@@ -298,7 +402,7 @@ export function renderManifest(): string {
 export function renderServiceWorker(): string {
   return `
 const CACHE_NAME = 'nadovibe-control-room-v1';
-const SHELL_ASSETS = ['/', '/workbench', '/assets/gateway-client.js', '/assets/control-room.js', '/assets/workbench.js', '/assets/codemirror-vendor.js', '/manifest.webmanifest'];
+const SHELL_ASSETS = ['/', '/workbench', '/mobile', '/assets/gateway-client.js', '/assets/control-room.js', '/assets/workbench.js', '/assets/mobile-command-review.js', '/assets/codemirror-vendor.js', '/manifest.webmanifest'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS)));
   self.skipWaiting();
@@ -313,6 +417,31 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/')) return;
   event.respondWith(caches.match(request).then((cached) => cached || fetch(request)));
+});
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (_error) {
+    payload = {};
+  }
+  const title = payload.title || 'NadoVibe';
+  const body = payload.body || '모바일 inbox에서 검토가 필요합니다.';
+  const route = payload.route || '/mobile#inbox';
+  event.waitUntil(self.registration.showNotification(title, { body, data: { route } }));
+});
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const route = event.notification.data && event.notification.data.route ? event.notification.data.route : '/mobile#inbox';
+  event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    for (const client of clientList) {
+      if ('focus' in client) {
+        client.navigate(route);
+        return client.focus();
+      }
+    }
+    return clients.openWindow(route);
+  }));
 });
 `;
 }
@@ -893,6 +1022,689 @@ export function renderTabletWorkbenchCss(): string {
   `;
 }
 
+export function renderMobileCommandReviewCss(): string {
+  return `
+    .mobile-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) 72px;
+      gap: 10px;
+      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+      background: #f0fdfa;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .mobile-topbar {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #0f3f3b;
+      color: var(--inverse);
+    }
+    .mobile-icon-button {
+      width: 48px;
+      height: 48px;
+      border: 1px solid #23756d;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #155b55;
+      color: var(--inverse);
+    }
+    .mobile-icon-button svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .mobile-status-strip {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      border: 1px solid #bfe7df;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #134e4a;
+      font-size: 12px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .mobile-shell[data-connection="offline"] .mobile-status-strip {
+      border-color: color-mix(in srgb, var(--red) 32%, white);
+      background: #fef2f2;
+      color: var(--red);
+    }
+    .mobile-shell[data-connection="reconnecting"] .mobile-status-strip {
+      border-color: color-mix(in srgb, var(--amber) 32%, white);
+      background: #fff7ed;
+      color: var(--amber);
+    }
+    .mobile-main {
+      min-height: 0;
+      overflow: auto;
+      display: grid;
+      gap: 10px;
+      scroll-behavior: smooth;
+      padding-bottom: 4px;
+    }
+    .mobile-hero-panel, .mobile-section, .mobile-details {
+      border: 1px solid #bfe7df;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #134e4a;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .mobile-hero-panel {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+    }
+    .mobile-hero-panel h1 {
+      font-size: 22px;
+      line-height: 1.15;
+    }
+    .mobile-hero-panel p { color: #5b716d; line-height: 1.45; }
+    .mobile-next-actions, .mobile-card-actions, .mobile-confirm-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+    }
+    .mobile-segmented {
+      min-height: 50px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .mobile-segmented a, .mobile-bottom-nav a {
+      min-height: 48px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #bfe7df;
+      background: #ffffff;
+      color: #134e4a;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mobile-segmented a[data-active="true"] {
+      background: #0f3f3b;
+      color: var(--inverse);
+      border-color: #0f3f3b;
+    }
+    .mobile-section-heading {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 12px;
+      border-bottom: 1px solid #bfe7df;
+      background: #ccfbf1;
+    }
+    .mobile-section-heading h2 { font-size: 14px; }
+    .mobile-list {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+    }
+    .mobile-card {
+      min-height: 48px;
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid #bfe7df;
+      border-radius: 8px;
+      background: #ffffff;
+      min-width: 0;
+    }
+    .mobile-card strong, .mobile-card p, .mobile-card span { min-width: 0; overflow-wrap: anywhere; }
+    .mobile-card-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+    .mobile-primary, .mobile-secondary, .mobile-danger {
+      min-height: 48px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mobile-primary { background: #f97316; color: #ffffff; }
+    .mobile-secondary { background: #ccfbf1; color: #134e4a; border-color: #bfe7df; }
+    .mobile-danger { background: #b43c3c; color: #ffffff; }
+    .mobile-primary:disabled, .mobile-secondary:disabled, .mobile-danger:disabled {
+      cursor: not-allowed;
+      opacity: 0.56;
+    }
+    .mobile-details {
+      padding: 0;
+    }
+    .mobile-details summary {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      cursor: pointer;
+      font-weight: 700;
+      background: #ccfbf1;
+    }
+    #mobileDiffBody {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+    }
+    .mobile-command-form, .mobile-settings-form {
+      display: grid;
+      gap: 10px;
+      padding: 10px;
+    }
+    .mobile-command-form textarea {
+      width: 100%;
+      min-height: 92px;
+      resize: vertical;
+      border: 1px solid #bfe7df;
+      border-radius: 6px;
+      padding: 10px;
+      color: #134e4a;
+    }
+    .mobile-settings-form label {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid #bfe7df;
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 0 10px;
+      color: #134e4a;
+      font-weight: 700;
+    }
+    .mobile-settings-form input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      min-height: 22px;
+    }
+    .mobile-bottom-nav {
+      min-height: 72px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding: 8px;
+      border-radius: 8px;
+      background: #0f3f3b;
+    }
+    .mobile-bottom-nav a {
+      border-color: #23756d;
+      background: #155b55;
+      color: #f8fafc;
+      border-radius: 6px;
+    }
+    .mobile-confirm-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: grid;
+      align-items: end;
+      padding: 12px;
+      background: rgba(15, 63, 59, 0.32);
+    }
+    .mobile-confirm-sheet {
+      width: min(480px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #134e4a;
+      padding: 16px;
+      border: 1px solid #bfe7df;
+    }
+    @media (min-width: 481px) {
+      body { background: #d9f7f1; }
+      .mobile-shell { border-left: 1px solid #bfe7df; border-right: 1px solid #bfe7df; }
+    }
+  `;
+}
+
+export function renderMobileCommandReviewAppJs(): string {
+  return `
+(() => {
+  const client = window.NadoVibeGatewayClient.createGatewayClient();
+  const state = {
+    projection: null,
+    selectedRunId: undefined,
+    online: navigator.onLine,
+    connection: 'connected',
+    stream: undefined,
+    pendingConfirm: undefined
+  };
+  const $ = (id) => document.getElementById(id);
+  const idempotency = (prefix) => prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+  async function load() {
+    state.projection = await client.getMobileReview();
+    state.selectedRunId = state.selectedRunId || state.projection.runs[0]?.runId;
+    render();
+    connectStream();
+    routeFromHash();
+  }
+
+  function render() {
+    const p = state.projection;
+    if (!p) return;
+    $('mobileApp').dataset.connection = connectionState();
+    $('mobileWorkspaceLabel').textContent = p.runs[0]?.objective || '승인, 복구, 최종 검토';
+    renderStatus(p);
+    renderNextAction(p);
+    renderInbox(p);
+    renderRunDetail(p);
+    renderReview(p);
+    renderCommand(p);
+    renderNotificationSettings(p);
+    renderTabs();
+    setActionDisabled();
+  }
+
+  function connectionState() {
+    if (!state.online) return 'offline';
+    if (state.connection === 'reconnecting') return 'reconnecting';
+    return 'connected';
+  }
+
+  function canExecute() {
+    return connectionState() === 'connected';
+  }
+
+  function renderStatus(p) {
+    const label = connectionState() === 'offline' ? '오프라인입니다. 결정과 명령 전송은 재연결 후 가능합니다.' :
+      connectionState() === 'reconnecting' ? '재연결 중입니다. inbox 읽기는 유지되고 실행 action은 잠겨 있습니다.' :
+      p.serviceStatus.message + ' Workspace: ' + p.serviceStatus.workspaceMessage;
+    $('mobileServiceStatus').textContent = label;
+  }
+
+  function renderNextAction(p) {
+    const action = p.nextActions[0];
+    $('mobileNextAction').innerHTML = action ? (
+      '<span class="state-badge ' + escapeAttr(action.priority) + '">' + escapeHtml(action.kind.replace('_', ' ')) + '</span>' +
+      '<h1>' + escapeHtml(action.title) + '</h1>' +
+      '<p>' + escapeHtml(action.body) + '</p>' +
+      '<div class="mobile-next-actions">' +
+      '<a class="mobile-primary" href="' + escapeAttr(action.route) + '">Review</a>' +
+      '<button class="mobile-secondary" type="button" data-mobile-mark-route="' + escapeAttr(action.route) + '">Later</button>' +
+      '</div>'
+    ) : (
+      '<span class="state-badge done">clear</span><h1>처리할 결정 없음</h1><p>새 작업이나 검토 요청이 들어오면 이 영역에 먼저 표시됩니다.</p>'
+    );
+  }
+
+  function renderInbox(p) {
+    $('mobileInboxCount').textContent = String(p.inbox.filter((item) => item.unread).length);
+    const inboxItems = p.inbox.slice(-8).reverse();
+    $('mobileInboxList').innerHTML = inboxItems.length ? inboxItems.map((item) =>
+      '<article id="notification-' + escapeAttr(item.notificationId) + '" class="mobile-card">' +
+      '<div class="mobile-card-row"><strong>' + escapeHtml(item.title) + '</strong>' + badge(item.unread ? 'new' : 'read') + '</div>' +
+      '<p class="muted">' + escapeHtml(item.body) + '</p>' +
+      '<div class="mobile-card-actions"><a class="mobile-secondary" href="' + escapeAttr(item.route) + '">Open</a>' +
+      '<button class="mobile-secondary" type="button" data-mobile-read="' + escapeAttr(item.notificationId) + '">Done</button></div>' +
+      '</article>'
+    ).join('') : '<article class="mobile-card"><strong>Inbox clear</strong><p class="muted">사용자 결정이 필요한 항목만 표시됩니다.</p></article>';
+  }
+
+  function renderRunDetail(p) {
+    $('mobileCommandRun').innerHTML = p.runs.map((run) => '<option value="' + escapeAttr(run.runId) + '">' + escapeHtml(run.objective) + '</option>').join('');
+    if (state.selectedRunId) $('mobileCommandRun').value = state.selectedRunId;
+    const visibleRuns = p.runs.slice(-5).reverse();
+    $('mobileRunDetail').innerHTML = visibleRuns.length ? visibleRuns.map((run) =>
+      '<article class="mobile-card" data-mobile-run="' + escapeAttr(run.runId) + '">' +
+      '<div class="mobile-card-row"><strong>' + escapeHtml(run.objective) + '</strong>' + badge(run.userStatus) + '</div>' +
+      '<p class="muted">Step ' + escapeHtml(run.currentStep) + ' / ' + run.progressPercent + '%</p>' +
+      '<div class="mobile-card-actions">' +
+      '<button class="mobile-secondary" type="button" data-mobile-run-action="retry" data-run-id="' + escapeAttr(run.runId) + '">Retry</button>' +
+      '<button class="mobile-danger" type="button" data-mobile-run-action="cancel" data-run-id="' + escapeAttr(run.runId) + '">Cancel Run</button>' +
+      '</div></article>'
+    ).join('') : '<article class="mobile-card"><strong>Run 없음</strong><p class="muted">Quick Command를 보내면 필요한 run을 먼저 만들 수 있습니다.</p></article>';
+    const visibleAgents = p.agents.filter((agent) => !state.selectedRunId || agent.runId === state.selectedRunId).slice(-6);
+    $('mobileAgentRoster').innerHTML = '<article class="mobile-card"><strong>Agent Roster</strong>' + visibleAgents.map((agent) =>
+      '<div class="mobile-card-row"><span>' + escapeHtml(agent.label) + '</span>' + badge(agent.state) + '</div>'
+    ).join('') + '</article>';
+  }
+
+  function renderReview(p) {
+    const approvals = p.approvals.slice(-8).reverse();
+    $('mobileApprovalReview').innerHTML = approvals.length ? approvals.map((approval) =>
+      '<article id="approval-' + escapeAttr(approval.approvalId) + '" class="mobile-card">' +
+      '<div class="mobile-card-row"><strong>Approval Review</strong>' + badge(approval.state) + '</div>' +
+      '<p class="muted">' + escapeHtml(approval.reason) + '</p>' +
+      '<div class="mobile-card-actions">' +
+      '<button class="mobile-primary" type="button" data-mobile-approval-decision="approve" data-approval-id="' + escapeAttr(approval.approvalId) + '" data-destructive="' + String(approval.destructive) + '"' + (approval.state === 'requested' ? '' : ' disabled') + '>Approve</button>' +
+      '<button class="mobile-secondary" type="button" data-mobile-approval-decision="reject" data-approval-id="' + escapeAttr(approval.approvalId) + '"' + (approval.state === 'requested' ? '' : ' disabled') + '>Reject</button>' +
+      '</div></article>'
+    ).join('') : '<article class="mobile-card"><strong>승인 요청 없음</strong><p class="muted">필요한 승인만 표시됩니다.</p></article>';
+    const conflicts = p.conflicts.slice(-5).reverse();
+    $('mobileConflictReview').innerHTML = conflicts.length ? conflicts.map((conflict) =>
+      '<article id="conflict-' + escapeAttr(conflict.conflictId) + '" class="mobile-card">' +
+      '<div class="mobile-card-row"><strong>Conflict Review</strong>' + badge(conflict.state) + '</div>' +
+      '<p class="muted">' + escapeHtml(conflict.summary) + '</p>' +
+      '<p class="muted">' + escapeHtml(conflict.files.join(', ')) + '</p>' +
+      '<button class="mobile-secondary" type="button" data-mobile-conflict-action="escalate" data-conflict-id="' + escapeAttr(conflict.conflictId) + '"' + (conflict.state === 'detected' ? '' : ' disabled') + '>Escalate</button>' +
+      '</article>'
+    ).join('') : '';
+    const recovery = p.recovery.slice(-5).reverse();
+    $('mobileRecoveryDecision').innerHTML = recovery.length ? recovery.map((item) =>
+      '<article id="recovery-' + escapeAttr(item.recoveryId) + '" class="mobile-card">' +
+      '<div class="mobile-card-row"><strong>' + escapeHtml(item.title) + '</strong>' + badge(item.state) + '</div>' +
+      '<p class="muted">' + escapeHtml(item.nextAction) + '</p>' +
+      '<button class="mobile-secondary" type="button" data-mobile-recovery-action="retry" data-run-id="' + escapeAttr(item.runId) + '"' + (item.state === 'resolved' ? ' disabled' : '') + '>Retry Recovery</button>' +
+      '</article>'
+    ).join('') : '';
+    renderDiffSummary(p);
+    const final = p.finalReview;
+    $('mobileFinalReview').innerHTML = '<article id="final-review" class="mobile-card">' +
+      '<div class="mobile-card-row"><strong>Final Review</strong>' + badge(final.state) + '</div>' +
+      final.checklist.map((item) => '<div class="mobile-card-row"><span>' + escapeHtml(item.label) + '</span>' + badge(item.done ? 'done' : 'open') + '</div>').join('') +
+      '<div class="mobile-card-actions">' +
+      '<button class="mobile-primary" type="button" data-mobile-final-review="approve">Approve Final</button>' +
+      '<button class="mobile-secondary" type="button" data-mobile-final-review="request_changes">Request Changes</button>' +
+      '</div></article>';
+  }
+
+  function renderDiffSummary(p) {
+    const summary = p.diffSummary;
+    $('mobileDiffBody').innerHTML =
+      '<article class="mobile-card">' +
+      '<div class="mobile-card-row"><strong>' + summary.fileCount + ' files</strong><span class="muted">+' + summary.additions + ' / -' + summary.deletions + '</span></div>' +
+      '<p class="muted">Risky files: ' + escapeHtml(summary.riskyFiles.join(', ') || 'none') + '</p>' +
+      '<p class="muted">Test status: ' + escapeHtml(summary.testStatus) + '</p>' +
+      summary.hunks.slice(0, 8).map((hunk) => '<div class="mobile-card-row"><span>' + escapeHtml(hunk.title) + '</span>' + badge(hunk.state) + '</div>').join('') +
+      '</article>';
+  }
+
+  function renderCommand(p) {
+    $('mobileCommandLog').innerHTML = p.runs.length && p.nextActions.length ? p.nextActions.slice(0, 3).map((item) =>
+      '<article class="mobile-card"><strong>' + escapeHtml(item.title) + '</strong><p class="muted">' + escapeHtml(item.body) + '</p></article>'
+    ).join('') : '<article class="mobile-card"><strong>명령 대기</strong><p class="muted">템플릿과 자유 입력으로 agent에게 짧은 명령을 보낼 수 있습니다.</p></article>';
+  }
+
+  function renderNotificationSettings(p) {
+    const settings = p.notificationSettings;
+    $('notifyEnabled').checked = settings.enabled;
+    $('notifyApprovals').checked = settings.approvals;
+    $('notifyRecovery').checked = settings.recovery;
+    $('notifyFinal').checked = settings.finalReview;
+    $('notifyQuiet').checked = settings.quietHeavyWork;
+    $('mobileNotificationState').textContent = p.pushRegistration.registered ? p.pushRegistration.permission : (p.pushRegistration.permission === 'default' ? 'not registered' : p.pushRegistration.permission);
+  }
+
+  function renderTabs() {
+    const hash = location.hash || '#inbox';
+    for (const tab of document.querySelectorAll('[data-mobile-tab]')) {
+      tab.dataset.active = String(tab.getAttribute('href') === hash || (hash.startsWith('#approval') && tab.dataset.mobileTab === 'review'));
+    }
+  }
+
+  function badge(value) {
+    return '<span class="state-badge ' + escapeAttr(String(value).replace(/[^a-z0-9_-]/gi, '_')) + '">' + escapeHtml(value) + '</span>';
+  }
+
+  async function ensureRun() {
+    if (state.selectedRunId) return state.selectedRunId;
+    await client.seedIdentity({ tenantId: 'tenant_dev', userId: 'user_dev', workspaceId: 'workspace_dev', repositoryId: 'repo_nadovibe' });
+    const result = await client.createRun({
+      runId: 'run_mobile_' + Date.now(),
+      workspaceId: 'workspace_dev',
+      repositoryId: 'repo_nadovibe',
+      objective: 'Mobile Command Review 작업',
+      idempotencyKey: idempotency('mobile_run')
+    });
+    state.selectedRunId = result.runId;
+    await load();
+    return state.selectedRunId;
+  }
+
+  async function submitQuickCommand(event) {
+    event.preventDefault();
+    if (!canExecute()) return;
+    const runId = $('mobileCommandRun').value || await ensureRun();
+    const instruction = [$('mobileCommandTemplate').value, $('mobileCommandText').value.trim()].filter(Boolean).join(' / ');
+    state.projection = await client.enqueueCommand({
+      runId,
+      instruction,
+      resourceIntent: 'light',
+      idempotencyKey: idempotency('mobile_cmd')
+    });
+    $('mobileCommandText').value = '';
+    await load();
+    $('mobileCommandLog').innerHTML = '<article class="mobile-card"><strong>Command sent</strong><p class="muted">' + escapeHtml(instruction) + '</p></article>' + $('mobileCommandLog').innerHTML;
+  }
+
+  async function decideApproval(target) {
+    const approvalId = target.dataset.approvalId;
+    const decision = target.dataset.mobileApprovalDecision;
+    const execute = async () => {
+      state.projection = await client.decideApproval({ approvalId, decision, reason: 'Mobile review decision', idempotencyKey: idempotency('mobile_approval') });
+      await load();
+    };
+    if (target.dataset.destructive === 'true') {
+      openConfirm('확인 후 승인', '이 승인은 되돌리기 어려운 변경을 허용할 수 있습니다.', execute);
+      return;
+    }
+    await execute();
+  }
+
+  async function escalateConflict(target) {
+    state.projection = await client.escalateConflict({
+      conflictId: target.dataset.conflictId,
+      reason: 'Mobile conflict escalation',
+      idempotencyKey: idempotency('mobile_conflict')
+    });
+    await load();
+  }
+
+  async function runAction(target) {
+    const action = target.dataset.mobileRunAction;
+    const runId = target.dataset.runId;
+    const execute = async () => {
+      state.projection = await client.controlSupervisor({ runId, action, reason: 'Mobile run action', idempotencyKey: idempotency('mobile_run_action') });
+      await load();
+    };
+    if (action === 'cancel') {
+      openConfirm('Run 중단 확인', '진행 중인 작업을 중단합니다. 현재까지의 기록은 보존됩니다.', execute);
+      return;
+    }
+    await execute();
+  }
+
+  async function retryRecovery(target) {
+    state.projection = await client.controlSupervisor({
+      runId: target.dataset.runId,
+      action: 'retry',
+      reason: 'Mobile recovery retry',
+      idempotencyKey: idempotency('mobile_recovery')
+    });
+    await load();
+  }
+
+  async function decideFinalReview(target) {
+    const runId = state.projection.finalReview.runId || state.selectedRunId || await ensureRun();
+    state.projection = await client.decideFinalReview({
+      runId,
+      decision: target.dataset.mobileFinalReview,
+      reason: 'Mobile final review',
+      idempotencyKey: idempotency('mobile_final')
+    });
+    await load();
+  }
+
+  async function saveNotificationSettings(event) {
+    event.preventDefault();
+    const workspaceId = state.projection.notificationSettings.workspaceId || 'workspace_dev';
+    state.projection = await client.updateNotificationSettings({
+      workspaceId,
+      enabled: $('notifyEnabled').checked,
+      approvals: $('notifyApprovals').checked,
+      recovery: $('notifyRecovery').checked,
+      finalReview: $('notifyFinal').checked,
+      quietHeavyWork: $('notifyQuiet').checked,
+      idempotencyKey: idempotency('mobile_settings')
+    });
+    $('mobileNotificationState').textContent = 'saved';
+    await load();
+  }
+
+  async function registerPush() {
+    const workspaceId = state.projection?.notificationSettings.workspaceId || 'workspace_dev';
+    let permission = 'unsupported';
+    if ('Notification' in window) {
+      permission = Notification.permission;
+      if (permission === 'default') {
+        try {
+          permission = await Notification.requestPermission();
+        } catch (_error) {
+          permission = Notification.permission || 'default';
+        }
+      }
+    }
+    if ('serviceWorker' in navigator) {
+      await navigator.serviceWorker.register('/service-worker.js');
+    }
+    state.projection = await client.registerMobilePush({
+      workspaceId,
+      permission,
+      endpoint: location.origin + '/mobile#inbox',
+      routeOnClick: '/mobile#inbox',
+      idempotencyKey: idempotency('mobile_push')
+    });
+    $('mobileNotificationState').textContent = permission;
+    await load();
+  }
+
+  async function markNotificationRead(notificationId) {
+    state.projection = await client.markNotificationRead({ notificationId, idempotencyKey: idempotency('mobile_read') });
+    await load();
+  }
+
+  function openConfirm(title, body, action) {
+    state.pendingConfirm = action;
+    $('mobileConfirmTitle').textContent = title;
+    $('mobileConfirmBody').textContent = body;
+    $('mobileConfirmSheet').hidden = false;
+    $('mobileConfirmApply').focus();
+  }
+
+  function closeConfirm() {
+    state.pendingConfirm = undefined;
+    $('mobileConfirmSheet').hidden = true;
+  }
+
+  function setActionDisabled() {
+    const disabled = !canExecute();
+    for (const selector of ['[data-mobile-approval-decision]', '[data-mobile-conflict-action]', '[data-mobile-recovery-action]', '[data-mobile-run-action]', '[data-mobile-final-review]', '#mobileCommandSubmit']) {
+      for (const item of document.querySelectorAll(selector)) {
+        item.disabled = disabled;
+      }
+    }
+  }
+
+  function connectStream() {
+    if (!state.projection || state.stream) return;
+    const stream = client.openStream(state.projection.lastOffset);
+    state.stream = stream;
+    stream.addEventListener('core_event', () => {
+      state.connection = 'connected';
+      load().catch(reportError);
+    });
+    stream.onerror = () => {
+      state.connection = 'reconnecting';
+      render();
+      stream.close();
+      state.stream = undefined;
+      window.setTimeout(() => load().catch(reportError), 1200);
+    };
+  }
+
+  function routeFromHash() {
+    renderTabs();
+    if (!location.hash) return;
+    window.setTimeout(() => {
+      const target = document.querySelector(location.hash);
+      if (target) target.scrollIntoView({ block: 'start' });
+    }, 40);
+  }
+
+  async function handleClick(event) {
+    const target = event.target.closest('button');
+    if (!target) return;
+    if (!canExecute() && !['registerPushButton', 'mobileConfirmCancel'].includes(target.id)) return;
+    if (target.id === 'registerPushButton') await registerPush();
+    if (target.dataset.mobileRead) await markNotificationRead(target.dataset.mobileRead);
+    if (target.dataset.mobileApprovalDecision) await decideApproval(target);
+    if (target.dataset.mobileConflictAction) await escalateConflict(target);
+    if (target.dataset.mobileRecoveryAction) await retryRecovery(target);
+    if (target.dataset.mobileRunAction) await runAction(target);
+    if (target.dataset.mobileFinalReview) await decideFinalReview(target);
+    if (target.dataset.mobileMarkRoute) location.hash = target.dataset.mobileMarkRoute.replace(/^.*#/, '#');
+    if (target.id === 'mobileConfirmCancel') closeConfirm();
+    if (target.id === 'mobileConfirmApply' && state.pendingConfirm) {
+      const action = state.pendingConfirm;
+      closeConfirm();
+      await action();
+    }
+  }
+
+  function reportError(error) {
+    state.connection = 'offline';
+    $('mobileApp').dataset.connection = 'offline';
+    $('mobileServiceStatus').textContent = error instanceof Error ? error.message : '오류가 발생했습니다.';
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+  }
+  function escapeAttr(value) {
+    return escapeHtml(value).replace(/\\s+/g, ' ');
+  }
+
+  document.addEventListener('click', (event) => handleClick(event).catch(reportError));
+  window.addEventListener('hashchange', routeFromHash);
+  window.addEventListener('offline', () => {
+    state.online = false;
+    render();
+  });
+  window.addEventListener('online', () => {
+    state.online = true;
+    load().catch(reportError);
+  });
+  $('mobileQuickCommandForm').addEventListener('submit', (event) => submitQuickCommand(event).catch(reportError));
+  $('mobileNotificationSettings').addEventListener('submit', (event) => saveNotificationSettings(event).catch(reportError));
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js').catch(() => undefined);
+  load().catch(reportError);
+})();
+`;
+}
+
 export function renderControlRoomAppJs(): string {
   return `
 (() => {
@@ -1270,7 +2082,7 @@ function renderGuard() {
 
 function renderFiles(p) {
   const query = $('fileSearch').value.trim().toLowerCase();
-  const files = p.fileTree.filter((item) => item.type === 'file' && (!query || item.path.toLowerCase().includes(query))).slice(0, 180);
+  const files = p.fileTree.filter((item) => item.type === 'file' && (!query || item.path.toLowerCase().includes(query))).slice(0, 320);
   $('workbenchFileTree').innerHTML = files.map((item) =>
     '<button class="file-row" type="button" data-open-file="' + escapeAttr(item.path) + '" data-selected="' + String(item.path === state.filePath) + '" title="' + escapeAttr(item.path) + '">' +
     '<strong>' + escapeHtml(item.name) + '</strong><span class="muted">' + escapeHtml(item.path.replace('/' + item.name, '')) + '</span>' +

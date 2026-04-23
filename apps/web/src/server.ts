@@ -1,7 +1,16 @@
 import http from "node:http";
 import { build } from "esbuild";
 import { renderGeneratedGatewayBrowserClient } from "@nadovibe/api-contract";
-import { renderControlRoomAppJs, renderControlRoomHtml, renderManifest, renderServiceWorker, renderTabletWorkbenchAppJs, renderTabletWorkbenchHtml } from "@nadovibe/ui";
+import {
+  renderControlRoomAppJs,
+  renderControlRoomHtml,
+  renderManifest,
+  renderMobileCommandReviewAppJs,
+  renderMobileCommandReviewHtml,
+  renderServiceWorker,
+  renderTabletWorkbenchAppJs,
+  renderTabletWorkbenchHtml
+} from "@nadovibe/ui";
 
 const port = Number.parseInt(process.env.WEB_PORT ?? "5173", 10);
 const gatewayBaseUrl = process.env.GATEWAY_BASE_URL ?? "http://127.0.0.1:8080";
@@ -16,6 +25,10 @@ const server = http.createServer(async (request, response) => {
     send(response, 200, "text/html; charset=utf-8", renderTabletWorkbenchHtml());
     return;
   }
+  if (request.url === "/mobile") {
+    send(response, 200, "text/html; charset=utf-8", renderMobileCommandReviewHtml());
+    return;
+  }
   if (request.url === "/assets/gateway-client.js") {
     send(response, 200, "text/javascript; charset=utf-8", renderGeneratedGatewayBrowserClient(gatewayBaseUrl));
     return;
@@ -26,6 +39,10 @@ const server = http.createServer(async (request, response) => {
   }
   if (request.url === "/assets/workbench.js") {
     send(response, 200, "text/javascript; charset=utf-8", renderTabletWorkbenchAppJs());
+    return;
+  }
+  if (request.url === "/assets/mobile-command-review.js") {
+    send(response, 200, "text/javascript; charset=utf-8", renderMobileCommandReviewAppJs());
     return;
   }
   if (request.url === "/assets/codemirror-vendor.js") {

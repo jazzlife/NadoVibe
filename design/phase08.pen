@@ -1,0 +1,223 @@
+{
+  "version": "2.10",
+  "variables": {
+    "phase08/color/canvas": { "type": "color", "value": "#F0FDFA" },
+    "phase08/color/chrome": { "type": "color", "value": "#0F3F3B" },
+    "phase08/color/chromeRaised": { "type": "color", "value": "#155B55" },
+    "phase08/color/surface": { "type": "color", "value": "#FFFFFF" },
+    "phase08/color/surfaceAlt": { "type": "color", "value": "#CCFBF1" },
+    "phase08/color/ink": { "type": "color", "value": "#134E4A" },
+    "phase08/color/inverse": { "type": "color", "value": "#F8FAFC" },
+    "phase08/color/muted": { "type": "color", "value": "#5B716D" },
+    "phase08/color/border": { "type": "color", "value": "#BFE7DF" },
+    "phase08/color/accent": { "type": "color", "value": "#0D9488" },
+    "phase08/color/action": { "type": "color", "value": "#F97316" },
+    "phase08/color/success": { "type": "color", "value": "#16A34A" },
+    "phase08/color/warning": { "type": "color", "value": "#D97706" },
+    "phase08/color/danger": { "type": "color", "value": "#B43C3C" },
+    "phase08/radius/panel": { "type": "number", "value": 8 },
+    "phase08/radius/control": { "type": "number", "value": 6 },
+    "phase08/layout/phoneWidth": { "type": "number", "value": 390 },
+    "phase08/layout/phoneHeight": { "type": "number", "value": 844 },
+    "phase08/layout/bottomNavHeight": { "type": "number", "value": 72 },
+    "phase08/spacing/page": { "type": "number", "value": 10 },
+    "phase08/spacing/gap": { "type": "number", "value": 10 },
+    "phase08/size/touchTarget": { "type": "number", "value": 48 }
+  },
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "Phase 08 Mobile Command and Review / Phone 390",
+      "clip": true,
+      "width": "$phase08/layout/phoneWidth",
+      "height": "$phase08/layout/phoneHeight",
+      "fill": "$phase08/color/canvas",
+      "layout": "vertical",
+      "gap": "$phase08/spacing/gap",
+      "padding": "$phase08/spacing/page",
+      "children": [
+        {
+          "type": "frame",
+          "id": "phase08_topbar",
+          "name": "Mobile topbar",
+          "width": "fill_container",
+          "height": 64,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [10, 12],
+          "alignItems": "center",
+          "fill": "$phase08/color/chrome",
+          "cornerRadius": "$phase08/radius/panel",
+          "children": [
+            {
+              "type": "frame",
+              "id": "phase08_mark",
+              "width": 44,
+              "height": 44,
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "fill": "$phase08/color/accent",
+              "cornerRadius": "$phase08/radius/panel",
+              "children": [
+                { "type": "text", "id": "phase08_mark_text", "content": "NV", "fontFamily": "Plus Jakarta Sans", "fontSize": 13, "fontWeight": "700", "fill": "$phase08/color/inverse" }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "phase08_title_stack",
+              "width": "fill_container",
+              "height": "fit_content(44)",
+              "layout": "vertical",
+              "gap": 2,
+              "justifyContent": "center",
+              "children": [
+                { "type": "text", "id": "phase08_title", "content": "Mobile Command", "fontFamily": "Plus Jakarta Sans", "fontSize": 16, "fontWeight": "700", "fill": "$phase08/color/inverse" },
+                { "type": "text", "id": "phase08_subtitle", "content": "승인, 복구, 최종 검토", "fontFamily": "Plus Jakarta Sans", "fontSize": 11, "fill": "#B9F4EA" }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "phase08_status_chip",
+              "width": 86,
+              "height": 36,
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "fill": "$phase08/color/chromeRaised",
+              "cornerRadius": 18,
+              "children": [
+                { "type": "text", "id": "phase08_status_text", "content": "connected", "fontFamily": "Plus Jakarta Sans", "fontSize": 11, "fontWeight": "700", "fill": "$phase08/color/inverse" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "phase08_next_action",
+          "name": "Next action panel",
+          "width": "fill_container",
+          "height": 158,
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 14,
+          "fill": "$phase08/color/surface",
+          "stroke": { "thickness": 1, "fill": "$phase08/color/border" },
+          "cornerRadius": "$phase08/radius/panel",
+          "children": [
+            { "type": "text", "id": "phase08_next_label", "content": "Next action", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fontWeight": "700", "fill": "$phase08/color/accent" },
+            { "type": "text", "id": "phase08_next_title", "content": "작업 범위 승인 요청", "fontFamily": "Plus Jakarta Sans", "fontSize": 22, "fontWeight": "700", "fill": "$phase08/color/ink" },
+            { "type": "text", "id": "phase08_next_body", "content": "이동 중에도 필요한 결정만 먼저 처리합니다. 긴 diff는 요약을 먼저 보고 hunk는 펼쳐 검토합니다.", "textGrowth": "fixed-width", "width": "fill_container", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "lineHeight": 1.35, "fill": "$phase08/color/muted" },
+            {
+              "type": "frame",
+              "id": "phase08_next_actions",
+              "width": "fill_container",
+              "height": "$phase08/size/touchTarget",
+              "layout": "horizontal",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "phase08_primary_action",
+                  "width": "fill_container",
+                  "height": "$phase08/size/touchTarget",
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "fill": "$phase08/color/action",
+                  "cornerRadius": "$phase08/radius/control",
+                  "children": [
+                    { "type": "text", "id": "phase08_review_text", "content": "Review", "fontFamily": "Plus Jakarta Sans", "fontSize": 14, "fontWeight": "700", "fill": "$phase08/color/inverse" }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "phase08_secondary_action",
+                  "width": 112,
+                  "height": "$phase08/size/touchTarget",
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "fill": "$phase08/color/surfaceAlt",
+                  "cornerRadius": "$phase08/radius/control",
+                  "children": [
+                    { "type": "text", "id": "phase08_later_text", "content": "Later", "fontFamily": "Plus Jakarta Sans", "fontSize": 14, "fontWeight": "700", "fill": "$phase08/color/ink" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "phase08_inbox_tabs",
+          "name": "Inbox filters",
+          "width": "fill_container",
+          "height": 50,
+          "layout": "horizontal",
+          "gap": 8,
+          "children": [
+            { "type": "frame", "id": "phase08_tab_need", "width": "fill_container", "height": "$phase08/size/touchTarget", "layout": "vertical", "justifyContent": "center", "alignItems": "center", "fill": "$phase08/color/chrome", "cornerRadius": 24, "children": [{ "type": "text", "id": "phase08_tab_need_text", "content": "Need review", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fontWeight": "700", "fill": "$phase08/color/inverse" }] },
+            { "type": "frame", "id": "phase08_tab_run", "width": "fill_container", "height": "$phase08/size/touchTarget", "layout": "vertical", "justifyContent": "center", "alignItems": "center", "fill": "$phase08/color/surface", "stroke": { "thickness": 1, "fill": "$phase08/color/border" }, "cornerRadius": 24, "children": [{ "type": "text", "id": "phase08_tab_run_text", "content": "Runs", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fontWeight": "700", "fill": "$phase08/color/ink" }] },
+            { "type": "frame", "id": "phase08_tab_notify", "width": "fill_container", "height": "$phase08/size/touchTarget", "layout": "vertical", "justifyContent": "center", "alignItems": "center", "fill": "$phase08/color/surface", "stroke": { "thickness": 1, "fill": "$phase08/color/border" }, "cornerRadius": 24, "children": [{ "type": "text", "id": "phase08_tab_notify_text", "content": "Notify", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fontWeight": "700", "fill": "$phase08/color/ink" }] }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "phase08_review_stack",
+          "name": "Review stack",
+          "width": "fill_container",
+          "height": 468,
+          "layout": "vertical",
+          "gap": 8,
+          "children": [
+            { "type": "frame", "id": "phase08_approval_card", "width": "fill_container", "height": 96, "layout": "vertical", "gap": 6, "padding": 12, "fill": "$phase08/color/surface", "stroke": { "thickness": 1, "fill": "$phase08/color/border" }, "cornerRadius": "$phase08/radius/panel", "children": [
+              { "type": "text", "id": "phase08_approval_title", "content": "Approval Review", "fontFamily": "Plus Jakarta Sans", "fontSize": 15, "fontWeight": "700", "fill": "$phase08/color/ink" },
+              { "type": "text", "id": "phase08_approval_body", "content": "Scope 확장 요청  Approve / Reject", "textGrowth": "fixed-width", "width": "fill_container", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fill": "$phase08/color/muted" },
+              { "type": "text", "id": "phase08_approval_hint", "content": "destructive action은 확인 sheet 필요", "fontFamily": "Plus Jakarta Sans", "fontSize": 11, "fontWeight": "700", "fill": "$phase08/color/action" }
+            ] },
+            { "type": "frame", "id": "phase08_conflict_card", "width": "fill_container", "height": 78, "layout": "vertical", "gap": 5, "padding": 12, "fill": "$phase08/color/surface", "stroke": { "thickness": 1, "fill": "$phase08/color/border" }, "cornerRadius": "$phase08/radius/panel", "children": [
+              { "type": "text", "id": "phase08_conflict_title", "content": "Conflict Review", "fontFamily": "Plus Jakarta Sans", "fontSize": 15, "fontWeight": "700", "fill": "$phase08/color/ink" },
+              { "type": "text", "id": "phase08_conflict_body", "content": "파일 1개 충돌, Supervisor에게 escalation", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fill": "$phase08/color/muted" }
+            ] },
+            { "type": "frame", "id": "phase08_diff_summary", "width": "fill_container", "height": 96, "layout": "vertical", "gap": 6, "padding": 12, "fill": "$phase08/color/surface", "stroke": { "thickness": 1, "fill": "$phase08/color/border" }, "cornerRadius": "$phase08/radius/panel", "children": [
+              { "type": "text", "id": "phase08_diff_title", "content": "Diff Summary", "fontFamily": "Plus Jakarta Sans", "fontSize": 15, "fontWeight": "700", "fill": "$phase08/color/ink" },
+              { "type": "text", "id": "phase08_diff_body", "content": "2 files  +180 / -24  risky: server.ts", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fill": "$phase08/color/muted" },
+              { "type": "text", "id": "phase08_diff_hint", "content": "요약 먼저, hunk는 펼쳐서 검토", "fontFamily": "Plus Jakarta Sans", "fontSize": 11, "fontWeight": "700", "fill": "$phase08/color/accent" }
+            ] },
+            { "type": "frame", "id": "phase08_recovery_card", "width": "fill_container", "height": 78, "layout": "vertical", "gap": 5, "padding": 12, "fill": "$phase08/color/surface", "stroke": { "thickness": 1, "fill": "$phase08/color/border" }, "cornerRadius": "$phase08/radius/panel", "children": [
+              { "type": "text", "id": "phase08_recovery_title", "content": "Recovery Decision", "fontFamily": "Plus Jakarta Sans", "fontSize": 15, "fontWeight": "700", "fill": "$phase08/color/ink" },
+              { "type": "text", "id": "phase08_recovery_body", "content": "recovering은 실패가 아니라 재시도 가능한 상태", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fill": "$phase08/color/warning" }
+            ] },
+            { "type": "frame", "id": "phase08_quick_command", "width": "fill_container", "height": 88, "layout": "vertical", "gap": 6, "padding": 12, "fill": "$phase08/color/surface", "stroke": { "thickness": 1, "fill": "$phase08/color/border" }, "cornerRadius": "$phase08/radius/panel", "children": [
+              { "type": "text", "id": "phase08_command_title", "content": "Quick Command", "fontFamily": "Plus Jakarta Sans", "fontSize": 15, "fontWeight": "700", "fill": "$phase08/color/ink" },
+              { "type": "text", "id": "phase08_command_body", "content": "Template + free text + target run", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fill": "$phase08/color/muted" },
+              { "type": "text", "id": "phase08_command_hint", "content": "offline/reconnect 중에는 전송 잠금", "fontFamily": "Plus Jakarta Sans", "fontSize": 11, "fontWeight": "700", "fill": "$phase08/color/danger" }
+            ] }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "phase08_bottom_nav",
+          "name": "Thumb navigation",
+          "width": "fill_container",
+          "height": "$phase08/layout/bottomNavHeight",
+          "layout": "horizontal",
+          "gap": 8,
+          "padding": 8,
+          "fill": "$phase08/color/chrome",
+          "cornerRadius": "$phase08/radius/panel",
+          "children": [
+            { "type": "frame", "id": "phase08_nav_inbox", "width": "fill_container", "height": "fill_container", "layout": "vertical", "justifyContent": "center", "alignItems": "center", "fill": "$phase08/color/chromeRaised", "cornerRadius": "$phase08/radius/control", "children": [{ "type": "text", "id": "phase08_nav_inbox_text", "content": "Inbox", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fontWeight": "700", "fill": "$phase08/color/inverse" }] },
+            { "type": "frame", "id": "phase08_nav_run", "width": "fill_container", "height": "fill_container", "layout": "vertical", "justifyContent": "center", "alignItems": "center", "children": [{ "type": "text", "id": "phase08_nav_run_text", "content": "Run", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fontWeight": "700", "fill": "#B9F4EA" }] },
+            { "type": "frame", "id": "phase08_nav_review", "width": "fill_container", "height": "fill_container", "layout": "vertical", "justifyContent": "center", "alignItems": "center", "children": [{ "type": "text", "id": "phase08_nav_review_text", "content": "Review", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fontWeight": "700", "fill": "#B9F4EA" }] },
+            { "type": "frame", "id": "phase08_nav_notify", "width": "fill_container", "height": "fill_container", "layout": "vertical", "justifyContent": "center", "alignItems": "center", "children": [{ "type": "text", "id": "phase08_nav_notify_text", "content": "Notify", "fontFamily": "Plus Jakarta Sans", "fontSize": 12, "fontWeight": "700", "fill": "#B9F4EA" }] }
+          ]
+        }
+      ]
+    }
+  ]
+}

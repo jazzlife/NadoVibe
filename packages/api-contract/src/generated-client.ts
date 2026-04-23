@@ -10,6 +10,10 @@ import type {
   EnqueueCommandRequest,
   FinalReviewDecisionRequest,
   HunkDecisionRequest,
+  MobileCommandReviewProjectionResponse,
+  MobilePushRegistrationRequest,
+  NotificationReadRequest,
+  NotificationSettingsRequest,
   SupervisorControlRequest,
   WorkspaceFileReadRequest,
   WorkspaceSearchRequest,
@@ -38,6 +42,10 @@ export interface GeneratedGatewayClient {
   writeFile(request: WorkspaceFileWriteRequest): Promise<ControlRoomProjectionResponse>;
   searchWorkspace(request: WorkspaceSearchRequest): Promise<WorkspaceSearchResponse>;
   decideHunk(request: HunkDecisionRequest): Promise<ControlRoomProjectionResponse>;
+  getMobileReview(): Promise<MobileCommandReviewProjectionResponse>;
+  registerMobilePush(request: MobilePushRegistrationRequest): Promise<MobileCommandReviewProjectionResponse>;
+  updateNotificationSettings(request: NotificationSettingsRequest): Promise<MobileCommandReviewProjectionResponse>;
+  markNotificationRead(request: NotificationReadRequest): Promise<MobileCommandReviewProjectionResponse>;
 }
 
 export function createGeneratedGatewayClient(options: GeneratedGatewayClientOptions): GeneratedGatewayClient {
@@ -81,7 +89,11 @@ export function createGeneratedGatewayClient(options: GeneratedGatewayClientOpti
     writeFile: (body) => request("POST", "/api/workspace/files/write", body),
     searchWorkspace: (body) =>
       request("GET", `/api/workspace/search?workspaceId=${encodeURIComponent(body.workspaceId)}&query=${encodeURIComponent(body.query)}&path=${encodeURIComponent(body.path ?? "")}`),
-    decideHunk: (body) => request("POST", "/api/diff/hunks/decision", body)
+    decideHunk: (body) => request("POST", "/api/diff/hunks/decision", body),
+    getMobileReview: () => request("GET", "/api/mobile/review"),
+    registerMobilePush: (body) => request("POST", "/api/mobile/push/register", body),
+    updateNotificationSettings: (body) => request("POST", "/api/mobile/notification-settings", body),
+    markNotificationRead: (body) => request("POST", "/api/mobile/notifications/read", body)
   };
 }
 
@@ -118,6 +130,10 @@ export function renderGeneratedGatewayBrowserClient(defaultBaseUrl: string): str
       writeFile: (body) => request('POST', '/api/workspace/files/write', body),
       searchWorkspace: (body) => request('GET', '/api/workspace/search?workspaceId=' + encodeURIComponent(body.workspaceId) + '&query=' + encodeURIComponent(body.query) + '&path=' + encodeURIComponent(body.path || '')),
       decideHunk: (body) => request('POST', '/api/diff/hunks/decision', body),
+      getMobileReview: () => request('GET', '/api/mobile/review'),
+      registerMobilePush: (body) => request('POST', '/api/mobile/push/register', body),
+      updateNotificationSettings: (body) => request('POST', '/api/mobile/notification-settings', body),
+      markNotificationRead: (body) => request('POST', '/api/mobile/notifications/read', body),
       openStream: (after = 0) => new EventSource(root + '/api/stream?after=' + encodeURIComponent(after))
     };
   }
