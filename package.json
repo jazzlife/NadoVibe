@@ -13,11 +13,13 @@
     "lint": "node scripts/lint-boundaries.mjs",
     "typecheck": "tsc -b --pretty false",
     "test": "npm run typecheck && npm run lint && node --import tsx --test packages/core-kernel/test/*.test.ts",
+    "test:e2e": "playwright test",
     "core:gate": "npm run test && npm run compose:config && npm run preflight:core",
     "compose:config": "node infra/portainer/validate-stacks.mjs",
     "preflight:core": "node infra/portainer/core-stack/preflight.mjs --check-only"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^22.13.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
