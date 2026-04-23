@@ -191,6 +191,94 @@ export function renderControlRoomHtml(): string {
 </html>`;
 }
 
+export function renderTabletWorkbenchHtml(): string {
+  return `<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="${ideShellTokens.color.chrome}" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <title>NadoVibe Code Workbench</title>
+  <style>${renderShellCss()}${renderTabletWorkbenchCss()}</style>
+</head>
+<body>
+  <a class="skip-link" href="#workbenchMain">Skip to workbench</a>
+  <div id="workbenchApp" class="workbench-shell" data-connection="connected">
+    <header class="workbench-topbar" aria-label="NadoVibe tablet workbench controls">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">NV</span>
+        <div>
+          <strong>Code Workbench</strong>
+          <span id="workbenchBranch" title="workspace">Workspace</span>
+        </div>
+      </div>
+      <label class="workbench-search">
+        <span>Workspace search</span>
+        <input id="workspaceSearch" autocomplete="off" placeholder="Search files, symbols, commands" />
+      </label>
+      <nav class="workbench-actions" aria-label="Workbench actions">
+        <button id="paletteButton" class="ghost-button touch-button" type="button">Command K</button>
+        <button id="saveFileButton" class="primary-button touch-button" type="button" disabled>Save</button>
+        <button id="revertFileButton" class="ghost-button touch-button" type="button" disabled>Revert</button>
+      </nav>
+    </header>
+    <section id="guardBanner" class="guard-banner" role="status">연결 상태를 확인하고 있습니다.</section>
+    <main id="workbenchMain" class="workbench-grid">
+      <aside id="fileTreeDrawer" class="workbench-drawer" aria-label="File tree drawer">
+        <div class="workbench-panel-heading">
+          <h2>Files</h2>
+          <button id="seedWorkbenchButton" class="ghost-button touch-icon" type="button">Seed</button>
+        </div>
+        <label class="drawer-search">
+          <span>File search</span>
+          <input id="fileSearch" autocomplete="off" placeholder="Find in workspace" />
+        </label>
+        <div id="searchResults" class="search-results" aria-live="polite"></div>
+        <div id="workbenchFileTree" class="workbench-file-tree" tabindex="0"></div>
+      </aside>
+      <section class="workbench-editor-pane" aria-label="Code editor and diff work surface">
+        <div id="editorTabs" class="editor-tabs"></div>
+        <div class="editor-toolbar" aria-label="Coding accessory bar">
+          <button id="askSelectionButton" class="primary-button touch-button" type="button" disabled>Ask Agent</button>
+          <button id="testSelectionButton" class="secondary-button touch-button" type="button" disabled>Run Test</button>
+          <button id="openIdeButton" class="ghost-button touch-button" type="button">Full IDE</button>
+        </div>
+        <section class="editor-frame" aria-label="CodeMirror 6 editor">
+          <div id="editorMeta" class="editor-meta">파일을 선택하십시오</div>
+          <div id="editorMount" class="codemirror-host"></div>
+        </section>
+        <section class="diff-panel" aria-label="Diff viewer">
+          <div class="workbench-panel-heading">
+            <h2>Diff Review</h2>
+            <span id="dirtyIndicator" class="state-badge">clean</span>
+          </div>
+          <div id="diffViewer" class="diff-viewer"></div>
+        </section>
+      </section>
+      <aside id="agentCompactRail" class="agent-compact-rail" aria-label="Agent status compact rail"></aside>
+    </main>
+    <section id="terminalSheet" class="terminal-sheet" aria-label="Terminal and test output bottom sheet">
+      <div class="terminal-sheet-heading">
+        <h2>Terminal / Tests</h2>
+        <button id="terminalToggle" class="ghost-button touch-icon" type="button">Hide</button>
+      </div>
+      <pre id="workbenchTerminalOutput" tabindex="0"></pre>
+      <div id="workbenchArtifacts" class="artifact-list"></div>
+    </section>
+    <div id="workbenchPalette" class="command-palette" hidden>
+      <div class="palette-dialog" role="dialog" aria-modal="true" aria-label="Command palette">
+        <input id="workbenchPaletteInput" placeholder="Save, run tests, ask selected code" />
+        <div id="workbenchPaletteResults"></div>
+      </div>
+    </div>
+  </div>
+  <script src="/assets/gateway-client.js"></script>
+  <script type="module" src="/assets/workbench.js"></script>
+</body>
+</html>`;
+}
+
 export function renderManifest(): string {
   return JSON.stringify(
     {
@@ -210,7 +298,7 @@ export function renderManifest(): string {
 export function renderServiceWorker(): string {
   return `
 const CACHE_NAME = 'nadovibe-control-room-v1';
-const SHELL_ASSETS = ['/', '/assets/gateway-client.js', '/assets/control-room.js', '/manifest.webmanifest'];
+const SHELL_ASSETS = ['/', '/workbench', '/assets/gateway-client.js', '/assets/control-room.js', '/assets/workbench.js', '/assets/codemirror-vendor.js', '/manifest.webmanifest'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS)));
   self.skipWaiting();
@@ -560,6 +648,251 @@ export function renderShellCss(): string {
   `;
 }
 
+export function renderTabletWorkbenchCss(): string {
+  return `
+    .workbench-shell {
+      height: 100vh;
+      min-height: 100vh;
+      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+      display: grid;
+      grid-template-rows: 64px 44px minmax(0, 1fr) 150px;
+      gap: 10px;
+      background: var(--canvas);
+      overflow: hidden;
+    }
+    .workbench-topbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+      padding: 0 14px;
+      border-radius: 8px;
+      background: var(--chrome);
+      color: var(--inverse);
+    }
+    .workbench-search span, .drawer-search span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .workbench-search input {
+      height: 44px;
+      border-color: #263349;
+      background: var(--chrome-raised);
+      color: var(--inverse);
+    }
+    .workbench-search input::placeholder { color: #b9c6c0; }
+    .workbench-actions { display: flex; gap: 8px; align-items: center; min-width: 0; }
+    .touch-button, .touch-icon {
+      min-width: 44px;
+      min-height: 44px;
+    }
+    .touch-icon { padding: 0 10px; }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+      filter: grayscale(0.2);
+    }
+    .guard-banner {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      border: 1px solid #fed7aa;
+      border-radius: 6px;
+      background: #fff7ed;
+      color: var(--amber);
+      font-size: 12px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .workbench-shell[data-connection="connected"] .guard-banner {
+      border-color: color-mix(in srgb, var(--run) 28%, white);
+      background: #f0fdf4;
+      color: #15803d;
+    }
+    .workbench-shell[data-connection="offline"] .guard-banner {
+      border-color: color-mix(in srgb, var(--red) 32%, white);
+      background: #fef2f2;
+      color: var(--red);
+    }
+    .workbench-grid {
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr) 184px;
+      gap: 10px;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .workbench-drawer, .agent-compact-rail, .diff-panel {
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid var(--soft);
+      border-radius: 8px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .workbench-drawer {
+      display: grid;
+      grid-template-rows: 52px 60px minmax(0, 118px) minmax(0, 1fr);
+    }
+    .workbench-panel-heading, .terminal-sheet-heading {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--soft);
+      background: var(--surface-alt);
+    }
+    .drawer-search { padding: 8px; }
+    .drawer-search input { height: 44px; }
+    .search-results, .workbench-file-tree, .diff-viewer, .agent-compact-rail {
+      display: grid;
+      gap: 7px;
+      padding: 8px;
+      align-content: start;
+      overflow: auto;
+      min-height: 0;
+    }
+    .search-results:empty { display: none; }
+    .file-row, .search-row, .tab-row, .hunk-row, .agent-row {
+      min-height: 44px;
+      border: 1px solid var(--soft);
+      border-radius: 6px;
+      background: var(--inverse);
+      color: var(--ink);
+      padding: 8px 10px;
+      display: grid;
+      gap: 4px;
+      text-align: left;
+      overflow: hidden;
+    }
+    .file-row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+    .file-row strong, .search-row strong, .tab-row strong, .hunk-row strong, .agent-row strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-row[data-selected="true"], .tab-row[data-active="true"] {
+      background: var(--surface-alt);
+      border-color: color-mix(in srgb, var(--accent) 42%, white);
+    }
+    .dirty-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--amber);
+    }
+    .workbench-editor-pane {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 52px 52px minmax(260px, 1fr) 146px;
+      gap: 10px;
+    }
+    .editor-tabs, .editor-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      overflow: auto;
+    }
+    .tab-row {
+      width: 188px;
+      flex: 0 0 auto;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+    }
+    .editor-toolbar { justify-content: flex-end; }
+    .editor-frame {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 34px minmax(0, 1fr);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--code);
+    }
+    .editor-meta {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      background: #111827;
+      color: #d1fae5;
+      font-size: 12px;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .codemirror-host {
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .codemirror-host .cm-editor {
+      height: 100%;
+      min-height: 100%;
+      background: var(--code);
+      color: #e5e7eb;
+      font-size: 13px;
+    }
+    .codemirror-host .cm-scroller { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .diff-panel {
+      display: grid;
+      grid-template-rows: 52px minmax(0, 1fr);
+    }
+    .hunk-row {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+    }
+    .hunk-row .secondary-button, .hunk-row .ghost-button { min-height: 44px; }
+    .agent-compact-rail { align-content: start; }
+    .terminal-sheet {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 44px minmax(0, 1fr) auto;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--code);
+      color: #e5e7eb;
+    }
+    .terminal-sheet-heading {
+      min-height: 44px;
+      border-bottom-color: #1f2937;
+      background: #111827;
+      color: var(--inverse);
+    }
+    #workbenchTerminalOutput {
+      margin: 0;
+      min-height: 0;
+      overflow: auto;
+      padding: 12px;
+      font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .workbench-shell .command-palette { place-items: start center; padding-top: 16vh; }
+    @media (max-width: 900px) {
+      .workbench-shell { grid-template-rows: auto 44px minmax(0, 1fr) 150px; }
+      .workbench-topbar { grid-template-columns: 1fr; padding: 10px; }
+      .workbench-actions { justify-content: flex-start; flex-wrap: wrap; }
+      .workbench-grid { grid-template-columns: 248px minmax(0, 1fr); }
+      .agent-compact-rail { display: none; }
+      .workbench-editor-pane { grid-template-rows: 52px 52px minmax(360px, 1fr) 176px; }
+    }
+    @media (max-width: 680px) {
+      .workbench-shell { grid-template-rows: auto auto minmax(0, 1fr) 210px; }
+      .workbench-grid { grid-template-columns: 1fr; overflow: auto; }
+      .workbench-drawer { max-height: 240px; }
+      .workbench-editor-pane { grid-template-rows: auto auto minmax(300px, 1fr) auto; }
+      .editor-toolbar { justify-content: flex-start; flex-wrap: wrap; }
+      .terminal-sheet { min-height: 210px; }
+      .hunk-row { grid-template-columns: 1fr; }
+    }
+  `;
+}
+
 export function renderControlRoomAppJs(): string {
   return `
 (() => {
@@ -821,5 +1154,409 @@ export function renderControlRoomAppJs(): string {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js').catch(() => undefined);
   load().catch(reportError);
 })();
+`;
+}
+
+export function renderTabletWorkbenchAppJs(): string {
+  return `
+const client = window.NadoVibeGatewayClient.createGatewayClient();
+const state = {
+  projection: null,
+  workspaceId: undefined,
+  runId: undefined,
+  filePath: undefined,
+  originalContent: '',
+  dirty: false,
+  online: navigator.onLine,
+  connection: 'connected',
+  editor: undefined,
+  cm: undefined,
+  stream: undefined
+};
+const $ = (id) => document.getElementById(id);
+const idempotency = (prefix) => prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+async function boot() {
+  state.cm = await import('/assets/codemirror-vendor.js');
+  mountEditor('');
+  await load();
+  bindEvents();
+  renderPalette();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js').catch(() => undefined);
+}
+
+async function load() {
+  state.projection = await client.getControlRoom('user');
+  state.workspaceId = state.workspaceId || state.projection.workspaces[0]?.workspaceId;
+  state.runId = state.runId || state.projection.runs[0]?.runId;
+  render();
+  connectStream();
+  if (!state.filePath) {
+    const preferred = state.projection.fileTree.find((item) => item.type === 'file' && item.path === 'packages/ui/src/index.ts') ||
+      state.projection.fileTree.find((item) => item.type === 'file' && /\\.(ts|tsx|js|json|md)$/.test(item.path));
+    if (preferred) await openFile(preferred.path);
+  }
+}
+
+function mountEditor(content) {
+  const cm = state.cm;
+  if (state.editor) state.editor.destroy();
+  $('editorMount').innerHTML = '';
+  state.editor = new cm.EditorView({
+    state: cm.EditorState.create({
+      doc: content,
+      extensions: [
+        cm.basicSetup,
+        cm.javascript(),
+        cm.EditorView.lineWrapping,
+        cm.EditorView.updateListener.of((update) => {
+          if (!update.docChanged) return;
+          state.dirty = state.editor.state.doc.toString() !== state.originalContent;
+          renderDirtyState();
+        })
+      ]
+    }),
+    parent: $('editorMount')
+  });
+}
+
+function render() {
+  const p = state.projection;
+  if (!p) return;
+  $('workbenchApp').dataset.connection = connectionState();
+  $('workbenchBranch').textContent = branchLabel(p);
+  $('workbenchBranch').title = branchLabel(p);
+  renderGuard();
+  renderFiles(p);
+  renderTabs();
+  renderDiff(p);
+  renderAgents(p);
+  renderTerminal(p);
+  renderEditorSession(p);
+  renderDirtyState();
+}
+
+function branchLabel(p) {
+  const repo = p.repositories[0];
+  const workspace = p.workspaces[0];
+  return (workspace?.name || 'Workspace') + ' / ' + (repo ? repo.name + ' / ' + repo.branch : 'Repository');
+}
+
+function connectionState() {
+  if (!state.online) return 'offline';
+  if (state.connection === 'reconnecting') return 'reconnecting';
+  return 'connected';
+}
+
+function canExecute() {
+  return connectionState() === 'connected';
+}
+
+function renderGuard() {
+  const current = connectionState();
+  if (current === 'offline') {
+    $('guardBanner').textContent = '오프라인 상태입니다. 편집 내용은 화면에 유지되지만 저장, 테스트, 에이전트 명령은 재연결 후 실행하십시오.';
+  } else if (current === 'reconnecting') {
+    $('guardBanner').textContent = '재연결 중입니다. 파일 검토는 계속할 수 있고 실행 명령은 잠겨 있습니다.';
+  } else {
+    $('guardBanner').textContent = '실시간 연결이 활성화되어 있습니다. 저장, diff 검토, 선택 범위 명령을 실행할 수 있습니다.';
+  }
+  for (const id of ['saveFileButton', 'askSelectionButton', 'testSelectionButton']) {
+    const button = $(id);
+    if (button) button.disabled = !canExecute() || (id !== 'testSelectionButton' && !state.filePath);
+  }
+  $('revertFileButton').disabled = !state.filePath || !state.dirty;
+}
+
+function renderFiles(p) {
+  const query = $('fileSearch').value.trim().toLowerCase();
+  const files = p.fileTree.filter((item) => item.type === 'file' && (!query || item.path.toLowerCase().includes(query))).slice(0, 180);
+  $('workbenchFileTree').innerHTML = files.map((item) =>
+    '<button class="file-row" type="button" data-open-file="' + escapeAttr(item.path) + '" data-selected="' + String(item.path === state.filePath) + '" title="' + escapeAttr(item.path) + '">' +
+    '<strong>' + escapeHtml(item.name) + '</strong><span class="muted">' + escapeHtml(item.path.replace('/' + item.name, '')) + '</span>' +
+    (item.path === state.filePath && state.dirty ? '<span class="dirty-dot" aria-label="dirty"></span>' : '') +
+    '</button>'
+  ).join('');
+}
+
+function renderTabs() {
+  const label = state.filePath ? state.filePath.split('/').pop() : 'No file';
+  $('editorTabs').innerHTML =
+    '<button class="tab-row" type="button" data-active="true" title="' + escapeAttr(state.filePath || '') + '">' +
+    '<strong>' + escapeHtml(label) + '</strong>' + (state.dirty ? '<span class="dirty-dot"></span>' : '<span class="muted">clean</span>') + '</button>';
+  $('editorMeta').textContent = state.filePath ? state.filePath + (state.dirty ? '  •  dirty' : '  •  saved') + '  •  CodeMirror 6' : '파일을 선택하십시오';
+}
+
+function renderDirtyState() {
+  $('dirtyIndicator').textContent = state.dirty ? 'dirty' : 'clean';
+  $('dirtyIndicator').className = 'state-badge ' + (state.dirty ? 'preparing' : 'done');
+  renderGuard();
+  renderTabs();
+}
+
+function renderDiff(p) {
+  $('diffViewer').innerHTML = p.diff.length ? p.diff.map((file) =>
+    file.hunks.map((hunk) =>
+      '<div class="hunk-row" data-hunk-id="' + escapeAttr(hunk.hunkId) + '">' +
+      '<div><strong>' + escapeHtml(hunk.title) + '</strong><p class="muted">' + escapeHtml(file.path) + ' +' + hunk.additions + ' / -' + hunk.deletions + '</p></div>' +
+      '<button class="secondary-button" type="button" data-hunk-decision="approve" data-hunk-path="' + escapeAttr(file.path) + '" data-hunk-id="' + escapeAttr(hunk.hunkId) + '">Approve</button>' +
+      '<button class="ghost-button" type="button" data-hunk-decision="request_changes" data-hunk-path="' + escapeAttr(file.path) + '" data-hunk-id="' + escapeAttr(hunk.hunkId) + '">' + escapeHtml(hunk.state) + '</button>' +
+      '</div>'
+    ).join('')
+  ).join('') : '<div class="list-item"><strong>Diff 없음</strong><p class="muted">저장 후 diff hunk가 여기에 표시됩니다.</p></div>';
+}
+
+function renderAgents(p) {
+  const agents = p.agentHierarchy.slice(0, 5).map((agent) =>
+    '<div class="agent-row"><strong>' + escapeHtml(agent.label) + '</strong><span class="muted">' + escapeHtml(agent.state) + '</span></div>'
+  ).join('');
+  const editor = p.editorSession;
+  $('agentCompactRail').innerHTML =
+    '<div class="workbench-panel-heading"><h2>Agents</h2><span class="count-badge">' + p.agentHierarchy.length + '</span></div>' +
+    agents +
+    '<div class="agent-row"><strong>Full IDE</strong><span class="muted">' + escapeHtml(editor.message) + '</span>' +
+    (editor.publicRoute ? '<span class="muted">Gateway route ' + escapeHtml(editor.publicRoute) + '</span>' : '') + '</div>';
+}
+
+function renderEditorSession(p) {
+  const editor = p.editorSession;
+  $('openIdeButton').textContent = editor.state === 'ready' ? 'Revoke IDE' : 'Full IDE';
+}
+
+function renderTerminal(p) {
+  $('workbenchTerminalOutput').textContent = p.terminal.length ? p.terminal.slice(-20).map((line) => '[' + line.stream + '] ' + line.text).join('\\n') : '아직 실행 출력이 없습니다.';
+  $('workbenchArtifacts').innerHTML = p.artifacts.slice(-3).map((item) =>
+    '<div class="list-item"><div class="item-row"><strong>' + escapeHtml(item.label) + '</strong><span class="muted">' + escapeHtml(item.sizeLabel) + '</span></div></div>'
+  ).join('');
+}
+
+function renderPalette() {
+  $('workbenchPaletteResults').innerHTML = [
+    ['save', 'Save file'],
+    ['ask', 'Ask selected code'],
+    ['test', 'Run tests'],
+    ['ide', 'Issue full IDE session']
+  ].map(([action, label]) => '<button class="file-button" type="button" data-palette-action="' + action + '">' + label + '</button>').join('');
+}
+
+async function seedWorkspace() {
+  await client.seedIdentity({ tenantId: 'tenant_dev', userId: 'user_dev', workspaceId: 'workspace_dev', repositoryId: 'repo_nadovibe' });
+  await load();
+}
+
+async function ensureRun() {
+  if (state.runId) return state.runId;
+  if (!state.workspaceId) await seedWorkspace();
+  const repositoryId = state.projection.repositories[0]?.repositoryId || 'repo_nadovibe';
+  const result = await client.createRun({
+    runId: 'run_' + Date.now(),
+    workspaceId: state.workspaceId || 'workspace_dev',
+    repositoryId,
+    objective: 'Tablet Code Workbench 작업',
+    idempotencyKey: idempotency('tablet_run')
+  });
+  state.projection = result.projection || await client.getControlRoom('user');
+  state.runId = result.runId;
+  render();
+  return state.runId;
+}
+
+async function openFile(path) {
+  if (state.dirty && !confirm('저장하지 않은 변경을 버리고 다른 파일을 여시겠습니까?')) return;
+  const result = await client.readFile({ workspaceId: state.workspaceId || 'workspace_dev', path });
+  state.filePath = result.path;
+  state.originalContent = result.content;
+  state.dirty = false;
+  mountEditor(result.content);
+  render();
+}
+
+async function saveFile() {
+  if (!canExecute() || !state.filePath) return;
+  const content = state.editor.state.doc.toString();
+  state.projection = await client.writeFile({
+    workspaceId: state.workspaceId || 'workspace_dev',
+    path: state.filePath,
+    content,
+    fileLeaseId: 'lease_tablet_' + sanitizeId(state.filePath),
+    idempotencyKey: idempotency('file_write')
+  });
+  state.originalContent = content;
+  state.dirty = false;
+  render();
+}
+
+async function revertFile() {
+  if (!state.filePath) return;
+  mountEditor(state.originalContent);
+  state.dirty = false;
+  renderDirtyState();
+}
+
+async function runSelection(resourceIntent) {
+  if (!canExecute()) return;
+  const runId = await ensureRun();
+  const selection = selectedRange();
+  state.projection = await client.enqueueCommand({
+    runId,
+    instruction: resourceIntent === 'test' ? '선택한 코드의 테스트 영향을 확인하십시오' : '선택한 코드 범위를 검토하고 수정안을 제안하십시오',
+    resourceIntent,
+    selection,
+    idempotencyKey: idempotency('selection_cmd')
+  });
+  render();
+}
+
+function selectedRange() {
+  const doc = state.editor.state.doc;
+  const range = state.editor.state.selection.main;
+  const fromLine = doc.lineAt(range.from);
+  const toLine = doc.lineAt(range.to || range.from);
+  const selected = doc.sliceString(range.from, range.to);
+  const fallback = fromLine.text;
+  return {
+    path: state.filePath || 'unknown',
+    fromLine: fromLine.number,
+    toLine: toLine.number,
+    text: selected.trim().length ? selected : fallback
+  };
+}
+
+async function searchWorkspace() {
+  const query = $('workspaceSearch').value.trim();
+  if (query.length < 2 || !state.workspaceId) {
+    $('searchResults').innerHTML = '';
+    return;
+  }
+  const result = await client.searchWorkspace({ workspaceId: state.workspaceId, query });
+  $('searchResults').innerHTML = result.results.map((item) =>
+    '<button class="search-row" type="button" data-open-file="' + escapeAttr(item.path) + '" title="' + escapeAttr(item.path) + '">' +
+    '<strong>' + escapeHtml(item.path) + '</strong><span class="muted">Line ' + item.line + '  ' + escapeHtml(item.preview) + '</span></button>'
+  ).join('');
+}
+
+async function decideHunk(target) {
+  if (!canExecute()) return;
+  state.projection = await client.decideHunk({
+    path: target.dataset.hunkPath,
+    hunkId: target.dataset.hunkId,
+    decision: target.dataset.hunkDecision,
+    reason: 'Tablet Workbench hunk review',
+    idempotencyKey: idempotency('hunk')
+  });
+  render();
+}
+
+async function toggleIde() {
+  const editor = state.projection.editorSession;
+  state.projection = await client.changeEditorSession({
+    workspaceId: state.workspaceId || editor.workspaceId,
+    action: editor.state === 'ready' ? 'revoke' : 'issue',
+    idempotencyKey: idempotency('ide')
+  });
+  render();
+}
+
+function connectStream() {
+  if (!state.projection || state.stream) return;
+  const stream = client.openStream(state.projection.lastOffset);
+  state.stream = stream;
+  stream.addEventListener('core_event', () => {
+    state.connection = 'connected';
+    load().catch(reportError);
+  });
+  stream.onerror = () => {
+    state.connection = 'reconnecting';
+    renderGuard();
+    stream.close();
+    state.stream = undefined;
+    window.setTimeout(() => load().catch(reportError), 1200);
+  };
+}
+
+function bindEvents() {
+  document.addEventListener('click', (event) => handleClick(event).catch(reportError));
+  $('fileSearch').addEventListener('input', () => renderFiles(state.projection));
+  $('workspaceSearch').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      searchWorkspace().catch(reportError);
+    }
+  });
+  $('workbenchPaletteInput').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      searchWorkspace().catch(reportError);
+      $('workbenchPalette').hidden = true;
+    }
+  });
+  document.addEventListener('keydown', (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      openPalette();
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      saveFile().catch(reportError);
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
+      runSelection('test').catch(reportError);
+    }
+    if (event.key === 'Escape') $('workbenchPalette').hidden = true;
+  });
+  window.addEventListener('offline', () => {
+    state.online = false;
+    renderGuard();
+  });
+  window.addEventListener('online', () => {
+    state.online = true;
+    load().catch(reportError);
+  });
+}
+
+async function handleClick(event) {
+  const target = event.target.closest('button');
+  if (!target) return;
+  if (target.id === 'seedWorkbenchButton') await seedWorkspace();
+  if (target.dataset.openFile) await openFile(target.dataset.openFile);
+  if (target.id === 'saveFileButton') await saveFile();
+  if (target.id === 'revertFileButton') await revertFile();
+  if (target.id === 'askSelectionButton') await runSelection('light');
+  if (target.id === 'testSelectionButton') await runSelection('test');
+  if (target.id === 'paletteButton') openPalette();
+  if (target.id === 'openIdeButton') await toggleIde();
+  if (target.id === 'terminalToggle') $('terminalSheet').classList.toggle('is-collapsed');
+  if (target.dataset.hunkDecision) await decideHunk(target);
+  if (target.dataset.paletteAction) {
+    $('workbenchPalette').hidden = true;
+    if (target.dataset.paletteAction === 'save') await saveFile();
+    if (target.dataset.paletteAction === 'ask') await runSelection('light');
+    if (target.dataset.paletteAction === 'test') await runSelection('test');
+    if (target.dataset.paletteAction === 'ide') await toggleIde();
+  }
+}
+
+function openPalette() {
+  $('workbenchPalette').hidden = false;
+  $('workbenchPaletteInput').focus();
+}
+
+function reportError(error) {
+  $('guardBanner').textContent = error instanceof Error ? error.message : '오류가 발생했습니다.';
+  $('workbenchApp').dataset.connection = 'offline';
+}
+
+function sanitizeId(value) {
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80);
+}
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+}
+function escapeAttr(value) {
+  return escapeHtml(value).replace(/\\s+/g, ' ');
+}
+
+boot().catch(reportError);
 `;
 }

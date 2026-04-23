@@ -71,7 +71,15 @@ export interface EnqueueCommandRequest {
   readonly instruction: string;
   readonly targetAgentId?: string;
   readonly resourceIntent: CommandResourceIntent;
+  readonly selection?: CommandSelection;
   readonly idempotencyKey: string;
+}
+
+export interface CommandSelection {
+  readonly path: string;
+  readonly fromLine: number;
+  readonly toLine: number;
+  readonly text: string;
 }
 
 export interface ApprovalDecisionRequest {
@@ -123,6 +131,32 @@ export interface WorkspaceFileWriteRequest {
   readonly path: string;
   readonly content: string;
   readonly fileLeaseId: string;
+  readonly idempotencyKey: string;
+}
+
+export interface WorkspaceSearchRequest {
+  readonly workspaceId: string;
+  readonly query: string;
+  readonly path?: string;
+}
+
+export interface WorkspaceSearchResultItem {
+  readonly path: string;
+  readonly line: number;
+  readonly preview: string;
+}
+
+export interface WorkspaceSearchResponse {
+  readonly workspaceId: string;
+  readonly query: string;
+  readonly results: readonly WorkspaceSearchResultItem[];
+}
+
+export interface HunkDecisionRequest {
+  readonly path: string;
+  readonly hunkId: string;
+  readonly decision: "approve" | "request_changes";
+  readonly reason: string;
   readonly idempotencyKey: string;
 }
 
@@ -221,6 +255,7 @@ export interface CommandQueueItem {
   readonly instruction: string;
   readonly state: "received" | "ready" | "preparing" | "running" | "completed" | "needs_review" | "cancelled";
   readonly resourceIntent: CommandResourceIntent;
+  readonly selection?: CommandSelection;
 }
 
 export interface ApprovalInboxProjectionItem {
@@ -370,6 +405,14 @@ export function requireString(record: Record<string, unknown>, key: string): str
   return value;
 }
 
+export function requireNumber(record: Record<string, unknown>, key: string): number {
+  const value = record[key];
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(`${key} must be a finite number`);
+  }
+  return value;
+}
+
 export function parseDevIdentitySeedRequest(value: unknown): DevIdentitySeedRequest {
   const record = requireObject(value, "DevIdentitySeedRequest");
   return {
@@ -410,6 +453,20 @@ export function parseEnqueueCommandRequest(value: unknown): EnqueueCommandReques
   };
   if (typeof record.targetAgentId === "string" && record.targetAgentId.trim().length > 0) {
     (request as { targetAgentId: string }).targetAgentId = record.targetAgentId;
+  }
+  if (record.selection !== undefined) {
+    const selection = requireObject(record.selection, "selection");
+    const fromLine = requireNumber(selection, "fromLine");
+    const toLine = requireNumber(selection, "toLine");
+    if (fromLine < 1 || toLine < fromLine) {
+      throw new Error("selection range is invalid");
+    }
+    (request as { selection: CommandSelection }).selection = {
+      path: requireString(selection, "path"),
+      fromLine,
+      toLine,
+      text: requireString(selection, "text")
+    };
   }
   return request;
 }
@@ -490,6 +547,33 @@ export function parseWorkspaceFileWriteRequest(value: unknown): WorkspaceFileWri
     path: requireString(record, "path"),
     content: requireString(record, "content"),
     fileLeaseId: requireString(record, "fileLeaseId"),
+    idempotencyKey: requireString(record, "idempotencyKey")
+  };
+}
+
+export function parseWorkspaceSearchRequest(value: unknown): WorkspaceSearchRequest {
+  const record = requireObject(value, "WorkspaceSearchRequest");
+  const request: WorkspaceSearchRequest = {
+    workspaceId: requireString(record, "workspaceId"),
+    query: requireString(record, "query")
+  };
+  if (typeof record.path === "string" && record.path.trim().length > 0) {
+    (request as { path: string }).path = record.path;
+  }
+  return request;
+}
+
+export function parseHunkDecisionRequest(value: unknown): HunkDecisionRequest {
+  const record = requireObject(value, "HunkDecisionRequest");
+  const decision = requireString(record, "decision");
+  if (decision !== "approve" && decision !== "request_changes") {
+    throw new Error("decision is invalid");
+  }
+  return {
+    path: requireString(record, "path"),
+    hunkId: requireString(record, "hunkId"),
+    decision,
+    reason: requireString(record, "reason"),
     idempotencyKey: requireString(record, "idempotencyKey")
   };
 }

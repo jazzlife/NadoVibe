@@ -9,8 +9,11 @@ import type {
   EditorSessionRequest,
   EnqueueCommandRequest,
   FinalReviewDecisionRequest,
+  HunkDecisionRequest,
   SupervisorControlRequest,
   WorkspaceFileReadRequest,
+  WorkspaceSearchRequest,
+  WorkspaceSearchResponse,
   WorkspaceFileTreeRequest,
   WorkspaceFileWriteRequest
 } from "./index.js";
@@ -33,6 +36,8 @@ export interface GeneratedGatewayClient {
   readFileTree(request: WorkspaceFileTreeRequest): Promise<{ readonly items: readonly unknown[] }>;
   readFile(request: WorkspaceFileReadRequest): Promise<{ readonly path: string; readonly content: string }>;
   writeFile(request: WorkspaceFileWriteRequest): Promise<ControlRoomProjectionResponse>;
+  searchWorkspace(request: WorkspaceSearchRequest): Promise<WorkspaceSearchResponse>;
+  decideHunk(request: HunkDecisionRequest): Promise<ControlRoomProjectionResponse>;
 }
 
 export function createGeneratedGatewayClient(options: GeneratedGatewayClientOptions): GeneratedGatewayClient {
@@ -73,7 +78,10 @@ export function createGeneratedGatewayClient(options: GeneratedGatewayClientOpti
     decideFinalReview: (body) => request("POST", "/api/final-review", body),
     readFileTree: (body) => request("GET", `/api/workspace/files/tree?workspaceId=${encodeURIComponent(body.workspaceId)}&path=${encodeURIComponent(body.path ?? "")}`),
     readFile: (body) => request("GET", `/api/workspace/files/read?workspaceId=${encodeURIComponent(body.workspaceId)}&path=${encodeURIComponent(body.path)}`),
-    writeFile: (body) => request("POST", "/api/workspace/files/write", body)
+    writeFile: (body) => request("POST", "/api/workspace/files/write", body),
+    searchWorkspace: (body) =>
+      request("GET", `/api/workspace/search?workspaceId=${encodeURIComponent(body.workspaceId)}&query=${encodeURIComponent(body.query)}&path=${encodeURIComponent(body.path ?? "")}`),
+    decideHunk: (body) => request("POST", "/api/diff/hunks/decision", body)
   };
 }
 
@@ -108,6 +116,8 @@ export function renderGeneratedGatewayBrowserClient(defaultBaseUrl: string): str
       readFileTree: (body) => request('GET', '/api/workspace/files/tree?workspaceId=' + encodeURIComponent(body.workspaceId) + '&path=' + encodeURIComponent(body.path || '')),
       readFile: (body) => request('GET', '/api/workspace/files/read?workspaceId=' + encodeURIComponent(body.workspaceId) + '&path=' + encodeURIComponent(body.path)),
       writeFile: (body) => request('POST', '/api/workspace/files/write', body),
+      searchWorkspace: (body) => request('GET', '/api/workspace/search?workspaceId=' + encodeURIComponent(body.workspaceId) + '&query=' + encodeURIComponent(body.query) + '&path=' + encodeURIComponent(body.path || '')),
+      decideHunk: (body) => request('POST', '/api/diff/hunks/decision', body),
       openStream: (after = 0) => new EventSource(root + '/api/stream?after=' + encodeURIComponent(after))
     };
   }

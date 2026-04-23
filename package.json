@@ -21,8 +21,13 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/node": "^22.13.0",
+    "esbuild": "^0.28.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "yaml": "^2.8.1"
+  },
+  "dependencies": {
+    "@codemirror/lang-javascript": "^6.2.5",
+    "codemirror": "^6.0.2"
   }
 }

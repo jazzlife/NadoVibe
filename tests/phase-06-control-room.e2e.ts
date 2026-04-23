@@ -43,7 +43,9 @@ test("phase 6 Control Room supports workspace seed, run creation, command enqueu
   await page.locator('[data-supervisor-action="pause"]').first().click();
   await expect(page.locator("#supervisorDecisions")).toContainText("pause");
 
-  await page.locator("#editorActionButton").click();
+  if ((await page.locator("#editorActionButton").innerText()) !== "Revoke") {
+    await page.locator("#editorActionButton").click();
+  }
   await expect(page.locator("#editorSession")).toContainText("ready");
   await expect(page.locator("#editorSession")).not.toContainText("token");
 

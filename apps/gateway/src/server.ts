@@ -12,8 +12,10 @@ import {
   parseEditorSessionRequest,
   parseEnqueueCommandRequest,
   parseFinalReviewDecisionRequest,
+  parseHunkDecisionRequest,
   parseSupervisorControlRequest,
   parseWorkspaceFileWriteRequest,
+  parseWorkspaceSearchRequest,
   publicProjection,
   rebuildControlRoomProjection,
   replayStreamFromOffset
@@ -31,6 +33,7 @@ import type {
   EnqueueCommandRequest,
   FileTreeItem,
   FinalReviewDecisionRequest,
+  HunkDecisionRequest,
   SupervisorControlRequest
 } from "@nadovibe/api-contract";
 import {
@@ -160,6 +163,16 @@ const server = http.createServer(async (request, response) => {
       sendJson(response, 200, { path: requestedPath, content: readFileSync(absolute, "utf8") });
       return;
     }
+    if (request.method === "GET" && request.url?.startsWith("/api/workspace/search")) {
+      const url = new URL(request.url, "http://127.0.0.1");
+      const body = parseWorkspaceSearchRequest({
+        workspaceId: url.searchParams.get("workspaceId") ?? defaultIdentity.workspaceId,
+        query: url.searchParams.get("query") ?? "",
+        path: url.searchParams.get("path") ?? ""
+      });
+      sendJson(response, 200, searchWorkspace(body.workspaceId, body.query, body.path ?? ""));
+      return;
+    }
     if (request.method === "POST" && request.url === "/api/workspace/files/write") {
       const body = parseWorkspaceFileWriteRequest(await readJson(request));
       if (!body.fileLeaseId.startsWith("lease_")) {
@@ -173,7 +186,26 @@ const server = http.createServer(async (request, response) => {
         runId: latestRunId(),
         message: "파일 저장 완료"
       }, contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId));
+      appendEvent("diff_write_" + sanitizeId(body.path), "Diff", "DiffUpdated", {
+        path: body.path,
+        additions: Math.max(1, body.content.split("\n").length),
+        deletions: 0,
+        hunks: [
+          {
+            hunkId: `hunk_saved_${sanitizeId(body.path)}`,
+            title: "Tablet Workbench saved changes",
+            additions: Math.max(1, Math.min(40, body.content.split("\n").length)),
+            deletions: 0,
+            state: "pending"
+          }
+        ]
+      } satisfies DiffFileItem, contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId));
       sendJson(response, 202, projection("user"));
+      return;
+    }
+    if (request.method === "POST" && request.url === "/api/diff/hunks/decision") {
+      const body = parseHunkDecisionRequest(await readJson(request));
+      sendJson(response, 202, decideHunk(body, requestId));
       return;
     }
     if (request.method === "GET" && request.url?.startsWith("/api/stream")) {
@@ -263,12 +295,15 @@ function enqueueCommand(body: EnqueueCommandRequest, requestId: string): Control
       state,
       resourceIntent: body.resourceIntent
     };
+    if (body.selection) {
+      (item as { selection: NonNullable<EnqueueCommandRequest["selection"]> }).selection = body.selection;
+    }
     appendEvent(commandId, "Command", "CommandQueued", item, context);
     appendEvent(`terminal_${commandId}`, "Artifact", "TerminalOutputAppended", {
       lineId: `line_${commandId}_1`,
       runId: body.runId,
       stream: "system",
-      text: `${body.instruction} 명령이 접수되었습니다.`
+      text: body.selection ? `${body.selection.path}:${body.selection.fromLine}-${body.selection.toLine} 선택 범위 명령이 접수되었습니다.` : `${body.instruction} 명령이 접수되었습니다.`
     }, context);
     if (body.resourceIntent === "test") {
       appendEvent(`artifact_${commandId}`, "Artifact", "ArtifactCreated", {
@@ -385,6 +420,43 @@ function decideFinalReview(body: FinalReviewDecisionRequest, requestId: string):
       const refreshed = core.getRun(body.runId);
       core.completeRun(body.runId, refreshed?.supervisorDecisionId, context);
     }
+    return projection("user");
+  });
+}
+
+function decideHunk(body: HunkDecisionRequest, requestId: string): ControlRoomProjectionResponse {
+  return withIdempotency(body.idempotencyKey, "decideHunk", `${body.path}:${body.hunkId}:${body.decision}`, () => {
+    const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
+    const current = projection("operator").diff.find((file) => file.path === body.path);
+    const updated: DiffFileItem = {
+      path: body.path,
+      additions: current?.additions ?? 0,
+      deletions: current?.deletions ?? 0,
+      hunks: (current?.hunks ?? [{ hunkId: body.hunkId, title: "Workbench hunk", additions: 0, deletions: 0, state: "pending" }]).map((hunk) =>
+        hunk.hunkId === body.hunkId ? { ...hunk, state: body.decision === "approve" ? "approved" : "changes_requested" } : hunk
+      )
+    };
+    appendEvent(`diff_${sanitizeId(body.path)}`, "Diff", "DiffUpdated", updated, context);
+    const approvalId = `approval_hunk_${sanitizeId(body.hunkId)}`;
+    appendEvent(approvalId, "ApprovalRequest", "ApprovalRequested", {
+      approvalId,
+      runId: latestRunId(),
+      reason: `Hunk ${body.hunkId} 검토`,
+      state: "requested",
+      destructive: false
+    }, context);
+    appendEvent(approvalId, "ApprovalRequest", "ApprovalDecided", {
+      approvalId,
+      decision: body.decision === "approve" ? "approve" : "reject",
+      reason: body.reason,
+      runId: latestRunId()
+    }, context);
+    appendEvent(`terminal_hunk_${sanitizeId(body.hunkId)}`, "Artifact", "TerminalOutputAppended", {
+      lineId: `line_hunk_${Date.now()}`,
+      runId: latestRunId() ?? "run_unknown",
+      stream: "system",
+      text: `Hunk ${body.hunkId} ${body.decision === "approve" ? "승인" : "변경 요청"} 처리되었습니다.`
+    }, context);
     return projection("user");
   });
 }
@@ -601,6 +673,44 @@ function readFileTree(requestedPath: string): readonly FileTreeItem[] {
   const items: FileTreeItem[] = [];
   walk(base, path.relative(workspaceRoot, base), 0, items);
   return items.slice(0, 180);
+}
+
+function searchWorkspace(workspaceId: string, query: string, requestedPath: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.length < 2) {
+    return { workspaceId, query, results: [] };
+  }
+  const base = safeWorkspacePath(requestedPath);
+  const results: Array<{ path: string; line: number; preview: string }> = [];
+  searchWalk(base, normalizedQuery, results);
+  return { workspaceId, query, results: results.slice(0, 40) };
+}
+
+function searchWalk(absolute: string, query: string, results: Array<{ path: string; line: number; preview: string }>, depth = 0): void {
+  if (depth > 4 || results.length >= 40) return;
+  const stat = statSync(absolute);
+  if (stat.isFile()) {
+    const relative = path.relative(workspaceRoot, absolute).replace(/\\/g, "/");
+    if (relative.toLowerCase().includes(query)) {
+      results.push({ path: relative, line: 1, preview: relative });
+    }
+    if (stat.size > 160_000 || !/\.(ts|tsx|js|jsx|json|md|css|html|yml|yaml|mjs|cjs)$/.test(relative)) return;
+    const lines = readFileSync(absolute, "utf8").split(/\r?\n/);
+    const hitIndex = lines.findIndex((line) => line.toLowerCase().includes(query));
+    if (hitIndex >= 0) {
+      results.push({ path: relative, line: hitIndex + 1, preview: lines[hitIndex]?.trim().slice(0, 160) ?? "" });
+    }
+    return;
+  }
+  if (!stat.isDirectory()) return;
+  const entries = readdirSync(absolute, { withFileTypes: true })
+    .filter((entry) => ![".git", "node_modules", "dist", "coverage", ".DS_Store", "test-results", "playwright-report"].includes(entry.name))
+    .sort((left, right) => Number(right.isDirectory()) - Number(left.isDirectory()) || left.name.localeCompare(right.name))
+    .slice(0, 120);
+  for (const entry of entries) {
+    searchWalk(path.join(absolute, entry.name), query, results, depth + 1);
+    if (results.length >= 40) return;
+  }
 }
 
 function walk(absolute: string, relativePath: string, depth: number, items: FileTreeItem[]): void {
