@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "dependencies": {
+    "@nadovibe/core-operations": "0.1.0",
     "@nadovibe/ui": "0.1.0"
   },
   "exports": {

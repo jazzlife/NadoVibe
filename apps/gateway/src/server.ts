@@ -52,10 +52,12 @@ import {
   type RunState,
   type SupervisorDecision
 } from "@nadovibe/core-kernel";
+import { buildOperationalAdminSnapshot, createBuildMetadata } from "@nadovibe/core-operations";
 import { rebuildPlatformReadModels } from "@nadovibe/domain";
 
 const port = Number.parseInt(process.env.GATEWAY_PORT ?? "8080", 10);
 const core = new CoreControlPlane();
+const buildMetadata = createBuildMetadata("gateway");
 const workspaceRoot = path.resolve(process.env.NADOVIBE_WORKSPACE_ROOT ?? process.cwd());
 const defaultIdentity = {
   tenantId: "tenant_dev",
@@ -73,6 +75,10 @@ const server = http.createServer(async (request, response) => {
     }
     if (request.url === "/healthz") {
       sendJson(response, 200, { ok: true, service: "gateway", dependency: "core", requestId });
+      return;
+    }
+    if (request.method === "GET" && request.url === "/version") {
+      sendJson(response, 200, buildMetadata);
       return;
     }
     if (request.url === "/readyz") {
@@ -150,6 +156,15 @@ const server = http.createServer(async (request, response) => {
     if (request.method === "GET" && request.url === "/api/admin/capacity") {
       const readModels = rebuildPlatformReadModels(core.events.readAll());
       sendJson(response, 200, { ...readModels.resources, queueDepth: 0 });
+      return;
+    }
+    if (request.method === "GET" && request.url === "/api/admin/operations") {
+      sendJson(response, 200, buildOperationalAdminSnapshot({
+        services: ["core-control-plane", "app-server-adapter", "orchestrator", "workspace-runtime", "projection-worker", "gateway", "web"],
+        reservations: core.capacity.activeReservations(),
+        projectionLagEvents: 0,
+        queueLagMs: 0
+      }));
       return;
     }
     if (request.method === "GET" && request.url === "/api/mobile/review") {

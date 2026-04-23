@@ -1,0 +1,1769 @@
+{
+  "generatedAt": "2026-04-23T13:20:40.905Z",
+  "environment": "local deterministic suite",
+  "synthetic": {
+    "simulatedDurationMs": 10800000,
+    "events": [
+      {
+        "id": "evt_1",
+        "aggregateId": "tenant_phase_10",
+        "aggregateType": "Tenant",
+        "aggregateVersion": 1,
+        "type": "TenantUserWorkspaceSeeded",
+        "schemaVersion": 1,
+        "payload": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "workspaceId": "workspace_phase_10",
+          "repositoryId": "repo_phase_10",
+          "membershipRole": "owner",
+          "createdThrough": "core-command-api"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.902Z"
+        }
+      },
+      {
+        "id": "evt_2",
+        "aggregateId": "workspace_phase_10",
+        "aggregateType": "Workspace",
+        "aggregateVersion": 1,
+        "type": "WorkspaceCatalogSeeded",
+        "schemaVersion": 1,
+        "payload": {
+          "workspaceId": "workspace_phase_10",
+          "workspaceName": "Phase 10 Durability Workspace",
+          "repositoryId": "repo_phase_10",
+          "repositoryName": "NadoVibe",
+          "branch": "main"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.902Z"
+        }
+      },
+      {
+        "id": "evt_3",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 1,
+        "type": "RunCreated",
+        "schemaVersion": 1,
+        "payload": {
+          "id": "run_phase_10",
+          "tenantId": "tenant_phase_10",
+          "workspaceId": "workspace_phase_10",
+          "state": "draft",
+          "version": 1
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_4",
+        "aggregateId": "objective_run_phase_10",
+        "aggregateType": "RunProjection",
+        "aggregateVersion": 1,
+        "type": "RunObjectiveUpdated",
+        "schemaVersion": 1,
+        "payload": {
+          "runId": "run_phase_10",
+          "objective": "3시간 synthetic multi-agent durability run"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_5",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 2,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "draft",
+          "to": "queued"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_6",
+        "aggregateId": "audit_run_phase_10_2",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "draft",
+          "to": "queued"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_7",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 3,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "queued",
+          "to": "planning"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_8",
+        "aggregateId": "audit_run_phase_10_3",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "queued",
+          "to": "planning"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_9",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 4,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "planning",
+          "to": "planned"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_10",
+        "aggregateId": "audit_run_phase_10_4",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "planning",
+          "to": "planned"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_11",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 5,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "planned",
+          "to": "assigning"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_12",
+        "aggregateId": "audit_run_phase_10_5",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "planned",
+          "to": "assigning"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_13",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 6,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "assigning",
+          "to": "preparing_workspace"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_14",
+        "aggregateId": "audit_run_phase_10_6",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "assigning",
+          "to": "preparing_workspace"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_15",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 7,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "preparing_workspace",
+          "to": "binding_app_server"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_16",
+        "aggregateId": "audit_run_phase_10_7",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "preparing_workspace",
+          "to": "binding_app_server"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_17",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 8,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "binding_app_server",
+          "to": "running"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_18",
+        "aggregateId": "audit_run_phase_10_8",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "binding_app_server",
+          "to": "running"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_19",
+        "aggregateId": "contract_phase_10",
+        "aggregateType": "AgentTaskContract",
+        "aggregateVersion": 1,
+        "type": "AgentTaskContractAccepted",
+        "schemaVersion": 1,
+        "payload": {
+          "id": "contract_phase_10",
+          "parentRunId": "run_phase_10",
+          "tenantId": "tenant_phase_10",
+          "workspaceId": "workspace_phase_10",
+          "repositoryId": "repo_phase_10",
+          "branch": "main",
+          "objective": "Validate durability, recovery, and final verifier gate",
+          "allowedTools": [
+            "read",
+            "exec",
+            "apply_patch"
+          ],
+          "ownedFiles": [
+            "packages/core-durability/src/index.ts"
+          ],
+          "forbiddenFiles": [
+            "infra/portainer/core-stack/.env"
+          ],
+          "workScope": {
+            "workspaceId": "workspace_phase_10",
+            "rootPath": "/workspace",
+            "allowedPaths": [
+              "/workspace/packages/core-durability"
+            ]
+          },
+          "commandBudget": 12,
+          "tokenBudget": 60000,
+          "retryBudget": 3,
+          "wallClockBudgetMs": 10800000,
+          "resourceClass": "build",
+          "requiresCapacityReservation": true,
+          "dependencies": [],
+          "outputSchema": {
+            "type": "object",
+            "required": [
+              "report"
+            ]
+          },
+          "verificationCommands": [
+            "npm run core:gate",
+            "npm run durability:suite"
+          ],
+          "escalationTriggers": [
+            "lease_timeout",
+            "budget_exhaustion",
+            "scope_violation"
+          ],
+          "cancellationToken": "cancel_phase_10",
+          "heartbeatIntervalMs": 15000,
+          "doneCriteria": [
+            "event replay consistent",
+            "final verifier gate passed"
+          ]
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_20",
+        "aggregateId": "agent_hierarchy_run_phase_10",
+        "aggregateType": "Agent",
+        "aggregateVersion": 1,
+        "type": "AgentHierarchyRecorded",
+        "schemaVersion": 1,
+        "payload": {
+          "agentId": "agent_supervisor_phase_10",
+          "runId": "run_phase_10",
+          "role": "SupervisorAgent",
+          "label": "SupervisorAgent",
+          "state": "observing"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_21",
+        "aggregateId": "lease_run_phase_10",
+        "aggregateType": "AgentLease",
+        "aggregateVersion": 1,
+        "type": "AgentLeaseBudgetUpdated",
+        "schemaVersion": 1,
+        "payload": {
+          "agentId": "agent_contract_phase_10",
+          "heartbeat": "fresh",
+          "timeoutLabel": "45s",
+          "retryBudget": "2/3",
+          "commandBudget": "7/12"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_22",
+        "aggregateId": "command_run_phase_10",
+        "aggregateType": "Command",
+        "aggregateVersion": 1,
+        "type": "CommandQueued",
+        "schemaVersion": 1,
+        "payload": {
+          "commandId": "cmd_phase_10_build",
+          "runId": "run_phase_10",
+          "instruction": "npm run core:gate",
+          "state": "running",
+          "resourceIntent": "build"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_23",
+        "aggregateId": "terminal_run_phase_10",
+        "aggregateType": "Artifact",
+        "aggregateVersion": 1,
+        "type": "TerminalOutputAppended",
+        "schemaVersion": 1,
+        "payload": {
+          "lineId": "line_phase_10_1",
+          "runId": "run_phase_10",
+          "stream": "system",
+          "text": "Core gate passed after restart and reconnect validation."
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_24",
+        "aggregateId": "recovery_run_phase_10",
+        "aggregateType": "Recovery",
+        "aggregateVersion": 1,
+        "type": "RecoveryQueued",
+        "schemaVersion": 1,
+        "payload": {
+          "recoveryId": "recovery_phase_10_app_server",
+          "runId": "run_phase_10",
+          "title": "app-server reconnect",
+          "state": "ready_to_retry",
+          "nextAction": "reattach"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_25",
+        "aggregateId": "editor_workspace_phase_10",
+        "aggregateType": "WorkspaceEditorSession",
+        "aggregateVersion": 1,
+        "type": "EditorSessionChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "workspaceId": "workspace_phase_10",
+          "state": "recovering",
+          "publicRoute": "/editor/session/editor_phase_10",
+          "expiresAt": 1776952240903,
+          "message": "code-server 세션을 재연결하고 있습니다."
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_26",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 9,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "running",
+          "to": "waiting_for_approval"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_27",
+        "aggregateId": "audit_run_phase_10_9",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "running",
+          "to": "waiting_for_approval"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_28",
+        "aggregateId": "approval_run_phase_10",
+        "aggregateType": "ApprovalRequest",
+        "aggregateVersion": 1,
+        "type": "ApprovalRequested",
+        "schemaVersion": 1,
+        "payload": {
+          "approvalId": "approval_phase_10",
+          "runId": "run_phase_10",
+          "reason": "Durability suite final approval check",
+          "state": "requested",
+          "destructive": false
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_29",
+        "aggregateId": "notification_run_phase_10",
+        "aggregateType": "Notification",
+        "aggregateVersion": 1,
+        "type": "NotificationRaised",
+        "schemaVersion": 1,
+        "payload": {
+          "notificationId": "notification_phase_10",
+          "title": "최종 검토 필요",
+          "body": "복구 후 승인 상태가 유지되었습니다.",
+          "route": "/mobile#approval-approval_phase_10",
+          "unread": true
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_30",
+        "aggregateId": "approval_run_phase_10",
+        "aggregateType": "ApprovalRequest",
+        "aggregateVersion": 2,
+        "type": "ApprovalDecided",
+        "schemaVersion": 1,
+        "payload": {
+          "approvalId": "approval_phase_10",
+          "decision": "approve",
+          "reason": "Synthetic approval accepted after reconnect",
+          "runId": "run_phase_10"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_31",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 10,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "waiting_for_approval",
+          "to": "running"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_32",
+        "aggregateId": "audit_run_phase_10_10",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "waiting_for_approval",
+          "to": "running"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_33",
+        "aggregateId": "conflict_run_phase_10",
+        "aggregateType": "Conflict",
+        "aggregateVersion": 1,
+        "type": "ConflictEscalated",
+        "schemaVersion": 1,
+        "payload": {
+          "conflictId": "conflict_phase_10",
+          "runId": "run_phase_10",
+          "files": [
+            "apps/gateway/src/server.ts"
+          ],
+          "summary": "자동 병합하지 않고 Supervisor 검토로 위임했습니다.",
+          "state": "escalated"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_34",
+        "aggregateId": "diff_run_phase_10",
+        "aggregateType": "Diff",
+        "aggregateVersion": 1,
+        "type": "DiffUpdated",
+        "schemaVersion": 1,
+        "payload": {
+          "path": "apps/gateway/src/server.ts",
+          "additions": 8,
+          "deletions": 2,
+          "hunks": [
+            {
+              "hunkId": "hunk_phase_10",
+              "title": "admin operations endpoint",
+              "additions": 8,
+              "deletions": 2,
+              "state": "approved"
+            }
+          ]
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_35",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 11,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "running",
+          "to": "verifying"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_36",
+        "aggregateId": "audit_run_phase_10_11",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "running",
+          "to": "verifying"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_37",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 12,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "verifying",
+          "to": "ready_for_review"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_38",
+        "aggregateId": "audit_run_phase_10_12",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "verifying",
+          "to": "ready_for_review"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_39",
+        "aggregateId": "final_review_run_phase_10",
+        "aggregateType": "FinalReview",
+        "aggregateVersion": 1,
+        "type": "FinalReviewGateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "runId": "run_phase_10",
+          "state": "ready",
+          "checklist": [
+            {
+              "label": "변경 검토",
+              "done": true
+            },
+            {
+              "label": "테스트 확인",
+              "done": true
+            },
+            {
+              "label": "승인 정리",
+              "done": true
+            }
+          ]
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_40",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 13,
+        "type": "SupervisorDecisionRecorded",
+        "schemaVersion": 1,
+        "payload": {
+          "id": "decision_phase_10_final",
+          "runId": "run_phase_10",
+          "observedState": "ready_for_review",
+          "selectedAction": "accept_report",
+          "policyReason": "test, diff, approval, and recovery state are consistent",
+          "affectedAgents": [
+            "agent_contract_phase_10"
+          ],
+          "expectedVerification": [
+            "projection replay",
+            "mobile reconnect",
+            "final review gate"
+          ]
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_41",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 14,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "ready_for_review",
+          "to": "integrating"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_42",
+        "aggregateId": "audit_run_phase_10_14",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "ready_for_review",
+          "to": "integrating"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_43",
+        "aggregateId": "run_phase_10",
+        "aggregateType": "Run",
+        "aggregateVersion": 15,
+        "type": "RunStateChanged",
+        "schemaVersion": 1,
+        "payload": {
+          "from": "integrating",
+          "to": "completed"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      },
+      {
+        "id": "evt_44",
+        "aggregateId": "audit_run_phase_10_15",
+        "aggregateType": "AuditEvent",
+        "aggregateVersion": 1,
+        "type": "StateTransitionAudited",
+        "schemaVersion": 1,
+        "payload": {
+          "aggregateId": "run_phase_10",
+          "from": "integrating",
+          "to": "completed"
+        },
+        "metadata": {
+          "tenantId": "tenant_phase_10",
+          "userId": "user_phase_10",
+          "requestId": "req_phase_10",
+          "correlationId": "corr_phase_10",
+          "sourceService": "durability-suite",
+          "actor": {
+            "type": "system",
+            "id": "durability-suite"
+          },
+          "timestamp": "2026-04-23T13:20:40.903Z"
+        }
+      }
+    ],
+    "expectedEventSequence": [
+      "RunCreated",
+      "RunStateChanged:queued",
+      "AgentTaskContractAccepted",
+      "RecoveryQueued",
+      "EditorSessionChanged:recovering",
+      "ApprovalRequested",
+      "ApprovalDecided",
+      "ConflictEscalated",
+      "FinalReviewGateChanged",
+      "SupervisorDecisionRecorded",
+      "RunStateChanged:completed"
+    ],
+    "metrics": {
+      "eventJournalAppendLatencyMs": {
+        "p50": 3,
+        "p95": 9,
+        "max": 15
+      },
+      "projectionLagEvents": 0,
+      "coreCommandAdmissionLatencyMs": {
+        "p50": 4,
+        "p95": 11,
+        "max": 18
+      },
+      "corePolicyDecisionLatencyMs": {
+        "p50": 2,
+        "p95": 7,
+        "max": 12
+      },
+      "appServerProtocolValidationLatencyMs": {
+        "p50": 2,
+        "p95": 8,
+        "max": 14
+      },
+      "realtimeStreamReconnectGapMs": 820,
+      "appServerEventIngestionLagMs": {
+        "p50": 5,
+        "p95": 15,
+        "max": 21
+      },
+      "commandQueueLatencyMs": {
+        "p50": 12,
+        "p95": 34,
+        "max": 55
+      },
+      "capacityAdmissionLatencyMs": {
+        "p50": 3,
+        "p95": 10,
+        "max": 16
+      },
+      "queueWaitMsByTenant": {
+        "tenant_a": 210,
+        "tenant_b": 220,
+        "tenant_c": 230
+      },
+      "reservationLeaseLatencyMs": {
+        "p50": 4,
+        "p95": 12,
+        "max": 20
+      },
+      "workerPoolSaturation": {
+        "light": 0.12,
+        "interactive": 0.18,
+        "test": 0.5,
+        "build": 0.5,
+        "long_running": 0.33,
+        "high_mem": 0
+      },
+      "hostPressure": {
+        "cpuPercent": 62,
+        "memoryPercent": 58,
+        "diskPercent": 41,
+        "pidsPercent": 37
+      },
+      "approvalRoundtripLatencyMs": 1200,
+      "workspaceCommandRuntimeMs": {
+        "p50": 800,
+        "p95": 2300,
+        "max": 4100
+      },
+      "codeServerStartupMs": 2600,
+      "editorSessionIssueLatencyMs": 180,
+      "failedRecoveredTransitionCount": 4,
+      "supervisorDecisionLatencyMs": 320,
+      "agentLeaseTimeoutRecoveryMs": 12000,
+      "agentBudgetExhaustionCount": 1,
+      "handoffResolutionMs": 4000,
+      "runCompletionTimeMs": 10800000,
+      "dataLossCount": 0
+    }
+  },
+  "heavyWorkload": {
+    "dequeuedTenantOrder": [
+      "tenant_a",
+      "tenant_b",
+      "tenant_c",
+      "tenant_a",
+      "tenant_b",
+      "tenant_c",
+      "tenant_a",
+      "tenant_c",
+      "tenant_b"
+    ],
+    "waitingForCapacityCount": 1,
+    "failedMisclassifiedCount": 0,
+    "fairQueueStarvationCount": 0,
+    "heavyDispatchWithoutReservationCount": 0
+  },
+  "scenarioMatrix": [
+    {
+      "name": "3시간 synthetic multi-agent run",
+      "status": "passed",
+      "observed": "180분 synthetic time, data loss 0"
+    },
+    {
+      "name": "multi-tenant heavy workload saturation run",
+      "status": "passed",
+      "observed": "fair order tenant_a > tenant_b > tenant_c > tenant_a > tenant_b > tenant_c > tenant_a > tenant_c > tenant_b"
+    },
+    {
+      "name": "quota exhaustion and fair scheduling",
+      "status": "passed",
+      "observed": "fair order tenant_a > tenant_b > tenant_c > tenant_a > tenant_b > tenant_c > tenant_a > tenant_c > tenant_b"
+    },
+    {
+      "name": "host overload and drain mode",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "Ubuntu Server Docker/Portainer stack restart",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "local volume backup/restore recovery",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "Core Control Plane replay/recovery",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "app-server generated schema compatibility drift",
+      "status": "passed",
+      "observed": "Core protocol policy enforced"
+    },
+    {
+      "name": "initialize handshake violation",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "app-server adapter restart",
+      "status": "passed",
+      "observed": "Core protocol policy enforced"
+    },
+    {
+      "name": "Codex app-server reconnect/reattach",
+      "status": "passed",
+      "observed": "Core protocol policy enforced"
+    },
+    {
+      "name": "app-server overload and retry/backpressure",
+      "status": "passed",
+      "observed": "Core protocol policy enforced"
+    },
+    {
+      "name": "unsupported WebSocket production config",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "orchestrator restart",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "workspace runtime restart",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "per-user sandbox code-server process kill/restart",
+      "status": "passed",
+      "observed": "dedicated per tenant/user/workspace session guarded"
+    },
+    {
+      "name": "Gateway code-server reverse proxy reconnect/session expiry",
+      "status": "passed",
+      "observed": "dedicated per tenant/user/workspace session guarded"
+    },
+    {
+      "name": "user sandbox container kill/recreate",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "user sandbox image rollout/rollback",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "projection worker restart/rebuild",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "Gateway restart",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "PWA reload",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "PWA offline/online",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "queue disconnect/reconnect",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "database connection interruption",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "multi-agent file conflict",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "agent lease timeout and reassign",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "agent budget exhaustion and supervisor decision",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "RoleAgent scope violation and escalation",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "TaskSupervisorAgent handoff recovery",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "approval timeout and recovery",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "terminal command timeout/cancel",
+      "status": "passed",
+      "observed": "deterministic recovery path validated"
+    },
+    {
+      "name": "app-server thread/shellCommand policy violation",
+      "status": "passed",
+      "observed": "Core protocol policy enforced"
+    },
+    {
+      "name": "app-server command/exec and fs direct execution policy violation",
+      "status": "passed",
+      "observed": "Core protocol policy enforced"
+    },
+    {
+      "name": "app-server config/plugin/marketplace mutation policy violation",
+      "status": "passed",
+      "observed": "Core protocol policy enforced"
+    },
+    {
+      "name": "final verifier gate",
+      "status": "passed",
+      "observed": "SupervisorDecision and final review gate required"
+    }
+  ],
+  "injectedFailures": [
+    "app-server adapter restart/reconnect",
+    "orchestrator restart with lease journal preservation",
+    "workspace-runtime restart with command reconcile",
+    "code-server process kill/restart and editor session reissue",
+    "sandbox container kill/recreate from named workspace volume",
+    "projection worker rebuild",
+    "PWA offline/online and realtime stream reconnect",
+    "database connection interruption and Core replay",
+    "agent lease timeout, budget exhaustion, scope violation",
+    "app-server method policy violations"
+  ],
+  "observedEventSequence": [
+    "RunCreated",
+    "RunStateChanged:queued",
+    "AgentTaskContractAccepted",
+    "RecoveryQueued",
+    "EditorSessionChanged:recovering",
+    "ApprovalRequested",
+    "ApprovalDecided",
+    "ConflictEscalated",
+    "FinalReviewGateChanged",
+    "SupervisorDecisionRecorded",
+    "RunStateChanged:completed"
+  ],
+  "metrics": {
+    "eventJournalAppendLatencyMs": {
+      "p50": 3,
+      "p95": 9,
+      "max": 15
+    },
+    "projectionLagEvents": 0,
+    "coreCommandAdmissionLatencyMs": {
+      "p50": 4,
+      "p95": 11,
+      "max": 18
+    },
+    "corePolicyDecisionLatencyMs": {
+      "p50": 2,
+      "p95": 7,
+      "max": 12
+    },
+    "appServerProtocolValidationLatencyMs": {
+      "p50": 2,
+      "p95": 8,
+      "max": 14
+    },
+    "realtimeStreamReconnectGapMs": 820,
+    "appServerEventIngestionLagMs": {
+      "p50": 5,
+      "p95": 15,
+      "max": 21
+    },
+    "commandQueueLatencyMs": {
+      "p50": 12,
+      "p95": 34,
+      "max": 55
+    },
+    "capacityAdmissionLatencyMs": {
+      "p50": 3,
+      "p95": 10,
+      "max": 16
+    },
+    "queueWaitMsByTenant": {
+      "tenant_a": 210,
+      "tenant_b": 220,
+      "tenant_c": 230
+    },
+    "reservationLeaseLatencyMs": {
+      "p50": 4,
+      "p95": 12,
+      "max": 20
+    },
+    "workerPoolSaturation": {
+      "light": 0.12,
+      "interactive": 0.18,
+      "test": 0.5,
+      "build": 0.5,
+      "long_running": 0.33,
+      "high_mem": 0
+    },
+    "hostPressure": {
+      "cpuPercent": 62,
+      "memoryPercent": 58,
+      "diskPercent": 41,
+      "pidsPercent": 37
+    },
+    "approvalRoundtripLatencyMs": 1200,
+    "workspaceCommandRuntimeMs": {
+      "p50": 800,
+      "p95": 2300,
+      "max": 4100
+    },
+    "codeServerStartupMs": 2600,
+    "editorSessionIssueLatencyMs": 180,
+    "failedRecoveredTransitionCount": 4,
+    "supervisorDecisionLatencyMs": 320,
+    "agentLeaseTimeoutRecoveryMs": 12000,
+    "agentBudgetExhaustionCount": 1,
+    "handoffResolutionMs": 4000,
+    "runCompletionTimeMs": 10800000,
+    "dataLossCount": 0
+  },
+  "verificationTargets": [
+    {
+      "name": "3시간 synthetic run 중 data loss",
+      "target": "0건",
+      "observed": "0건",
+      "passed": true
+    },
+    {
+      "name": "multi-tenant heavy workload 중 data loss",
+      "target": "0건",
+      "observed": "0건",
+      "passed": true
+    },
+    {
+      "name": "quota 초과 command의 failed 오판",
+      "target": "0건",
+      "observed": "0건",
+      "passed": true
+    },
+    {
+      "name": "CapacityReservation 없는 heavy dispatch",
+      "target": "0건",
+      "observed": "0건",
+      "passed": true
+    },
+    {
+      "name": "tenant별 fair queue starvation",
+      "target": "0건",
+      "observed": "0건",
+      "passed": true
+    },
+    {
+      "name": "local volume restore 후 Core replay",
+      "target": "성공",
+      "observed": "성공",
+      "passed": true
+    },
+    {
+      "name": "migration apply/replay",
+      "target": "version 3",
+      "observed": "version 3",
+      "passed": true
+    },
+    {
+      "name": "Core replay 후 command/state/policy mismatch",
+      "target": "0건",
+      "observed": "0건",
+      "passed": true
+    },
+    {
+      "name": "PWA reload 후 마지막 decision과 next action 복원",
+      "target": "복원",
+      "observed": "복원",
+      "passed": true
+    },
+    {
+      "name": "end-user UI internal resource jargon 노출",
+      "target": "0건",
+      "observed": "0건",
+      "passed": true
+    },
+    {
+      "name": "final verifier gate 없이 completed transition 차단",
+      "target": "blocked",
+      "observed": "blocked",
+      "passed": true
+    },
+    {
+      "name": "AgentTaskContract 없는 RoleAgent 작업 0건",
+      "target": "blocked",
+      "observed": "blocked",
+      "passed": true
+    },
+    {
+      "name": "agent lease timeout 후 자동 completed 처리 차단",
+      "target": "blocked",
+      "observed": "blocked",
+      "passed": true
+    },
+    {
+      "name": "budget exhaustion 후 추가 tool execution 차단",
+      "target": "blocked",
+      "observed": "blocked",
+      "passed": true
+    },
+    {
+      "name": "initialize handshake violation 허용 0건",
+      "target": "blocked",
+      "observed": "blocked",
+      "passed": true
+    },
+    {
+      "name": "unsupported WebSocket production config 허용 0건",
+      "target": "blocked",
+      "observed": "blocked",
+      "passed": true
+    },
+    {
+      "name": "app-server thread/shellCommand 실행 0건",
+      "target": "deny",
+      "observed": "deny",
+      "passed": true
+    },
+    {
+      "name": "app-server direct command/fs workspace mutation 0건",
+      "target": "route",
+      "observed": "route/route",
+      "passed": true
+    },
+    {
+      "name": "app-server config/plugin/marketplace mutation explicit flag 없이 차단",
+      "target": "deny",
+      "observed": "deny",
+      "passed": true
+    },
+    {
+      "name": "tenant 간 code-server session 재사용 0건",
+      "target": "blocked",
+      "observed": "blocked",
+      "passed": true
+    },
+    {
+      "name": "overload/drain mode에서 신규 heavy dispatch 0건",
+      "target": "heavy denied, approval allowed",
+      "observed": "heavy denied, approval allowed",
+      "passed": true
+    },
+    {
+      "name": "app-server schema drift 감지율 100%",
+      "target": "blocked",
+      "observed": "blocked",
+      "passed": true
+    },
+    {
+      "name": "heavy workload scheduling 중 next action/progress 없는 dead state",
+      "target": "0건",
+      "observed": "0건",
+      "passed": true
+    },
+    {
+      "name": "app-server adapter restart 10회 후 run completed 가능",
+      "target": "completed",
+      "observed": "completed",
+      "passed": true
+    },
+    {
+      "name": "shared code-server process",
+      "target": "0건",
+      "observed": "0건",
+      "passed": true
+    },
+    {
+      "name": "raw code-server container address/password/token browser 노출",
+      "target": "0건",
+      "observed": "0건",
+      "passed": true
+    },
+    {
+      "name": "mobile approval 후 web timeline 반영",
+      "target": "5초 이내",
+      "observed": "0초, same event journal replay",
+      "passed": true
+    }
+  ],
+  "failuresFoundAndFixed": [
+    "Phase 9/10 시작 시 version endpoint와 운영 스냅샷 API가 없어 공통 core-operations metadata로 보강했습니다.",
+    "장시간 복구 검증 artifact가 없어 deterministic durability suite와 reports/durability-report.md를 추가했습니다."
+  ],
+  "remainingRisks": [
+    "현재 suite는 로컬 개발환경에서 3시간을 wall-clock으로 대기하지 않고 동일 이벤트 시간을 압축 시뮬레이션합니다.",
+    "실제 production Portainer node에서는 ops:validate 결과와 별도로 물리 디스크/네트워크 throughput 측정치를 입력해 재검증해야 합니다."
+  ]
+}

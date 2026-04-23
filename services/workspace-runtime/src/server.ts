@@ -14,13 +14,19 @@ import {
   type WorkScope,
   type WorkspaceCodeServerProcess
 } from "@nadovibe/core-kernel";
+import { createBuildMetadata } from "@nadovibe/core-operations";
 
 const port = Number.parseInt(process.env.WORKSPACE_RUNTIME_PORT ?? "8093", 10);
+const buildMetadata = createBuildMetadata("workspace-runtime");
 
 const server = http.createServer(async (request, response) => {
   try {
     if (request.url === "/healthz" || request.url === "/readyz") {
       sendJson(response, 200, { ok: true, service: "workspace-runtime", dependency: "core" });
+      return;
+    }
+    if (request.method === "GET" && request.url === "/version") {
+      sendJson(response, 200, buildMetadata);
       return;
     }
     if (request.method === "POST" && request.url === "/v1/workspace/write-policy/check") {

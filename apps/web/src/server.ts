@@ -1,6 +1,7 @@
 import http from "node:http";
 import { build } from "esbuild";
 import { renderGeneratedGatewayBrowserClient } from "@nadovibe/api-contract";
+import { createBuildMetadata } from "@nadovibe/core-operations";
 import {
   renderControlRoomAppJs,
   renderControlRoomHtml,
@@ -14,11 +15,16 @@ import {
 
 const port = Number.parseInt(process.env.WEB_PORT ?? "5173", 10);
 const gatewayBaseUrl = process.env.GATEWAY_BASE_URL ?? "http://127.0.0.1:8080";
+const buildMetadata = createBuildMetadata("web");
 let codeMirrorVendorCache: Promise<string> | undefined;
 
 const server = http.createServer(async (request, response) => {
   if (request.url === "/healthz" || request.url === "/readyz") {
     send(response, 200, "application/json; charset=utf-8", JSON.stringify({ ok: true, service: "web", dependency: "static" }));
+    return;
+  }
+  if (request.method === "GET" && request.url === "/version") {
+    send(response, 200, "application/json; charset=utf-8", JSON.stringify(buildMetadata));
     return;
   }
   if (request.url === "/workbench") {

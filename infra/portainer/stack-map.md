@@ -10,3 +10,5 @@
 | `ops-observability-stack` | initial operational health surface and logs | all platform stacks |
 
 All Portainer stacks attach to named networks and use named volumes. User/workspace sandbox containers are not duplicated platform stacks; they are runtime-controlled containers created by Workspace Runtime in later phases.
+
+The enforced deployment order is implemented in `@nadovibe/core-operations` and validated by `npm run ops:validate`.

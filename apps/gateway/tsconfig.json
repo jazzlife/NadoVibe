@@ -9,6 +9,8 @@
   ],
   "references": [
     { "path": "../../packages/api-contract" },
-    { "path": "../../packages/core-kernel" }
+    { "path": "../../packages/core-kernel" },
+    { "path": "../../packages/core-operations" },
+    { "path": "../../packages/domain" }
   ]
 }

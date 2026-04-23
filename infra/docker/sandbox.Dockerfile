@@ -1,9 +1,18 @@
 FROM ubuntu:24.04
 
 ARG CODE_SERVER_VERSION=4.96.4
+ARG NADOVIBE_SANDBOX_IMAGE_VERSION=0.1.0
+ARG NADOVIBE_EXTENSION_ALLOWLIST="ms-vscode.vscode-typescript-next,esbenp.prettier-vscode"
+
+LABEL com.nadovibe.image.kind="sandbox" \
+  com.nadovibe.image.version="${NADOVIBE_SANDBOX_IMAGE_VERSION}" \
+  com.nadovibe.codeserver.version="${CODE_SERVER_VERSION}" \
+  com.nadovibe.extension.allowlist="${NADOVIBE_EXTENSION_ALLOWLIST}"
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CODE_SERVER_BIND_ADDR=127.0.0.1:8080
+ENV NADOVIBE_SANDBOX_IMAGE_VERSION=${NADOVIBE_SANDBOX_IMAGE_VERSION}
+ENV NADOVIBE_EXTENSION_ALLOWLIST=${NADOVIBE_EXTENSION_ALLOWLIST}
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \

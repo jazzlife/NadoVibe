@@ -1,12 +1,18 @@
 import http from "node:http";
 import { validateAgentTaskContract, type AgentTaskContract } from "@nadovibe/core-kernel";
+import { createBuildMetadata } from "@nadovibe/core-operations";
 
 const port = Number.parseInt(process.env.ORCHESTRATOR_PORT ?? "8092", 10);
+const buildMetadata = createBuildMetadata("orchestrator");
 
 const server = http.createServer(async (request, response) => {
   try {
     if (request.url === "/healthz" || request.url === "/readyz") {
       sendJson(response, 200, { ok: true, service: "orchestrator", dependency: "core" });
+      return;
+    }
+    if (request.method === "GET" && request.url === "/version") {
+      sendJson(response, 200, buildMetadata);
       return;
     }
     if (request.method === "POST" && request.url === "/v1/agent-contract/validate") {

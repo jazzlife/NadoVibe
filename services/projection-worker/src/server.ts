@@ -1,13 +1,19 @@
 import http from "node:http";
 import { CoreControlPlane, type DomainEvent } from "@nadovibe/core-kernel";
+import { createBuildMetadata } from "@nadovibe/core-operations";
 import { rebuildPlatformReadModels } from "@nadovibe/domain";
 
 const port = Number.parseInt(process.env.PROJECTION_WORKER_PORT ?? "8094", 10);
+const buildMetadata = createBuildMetadata("projection-worker");
 
 const server = http.createServer(async (request, response) => {
   try {
     if (request.url === "/healthz" || request.url === "/readyz") {
       sendJson(response, 200, { ok: true, service: "projection-worker", dependency: "projection" });
+      return;
+    }
+    if (request.method === "GET" && request.url === "/version") {
+      sendJson(response, 200, buildMetadata);
       return;
     }
     if (request.method === "POST" && request.url === "/v1/projections/rebuild") {

@@ -1,10 +1,12 @@
 import http from "node:http";
 import { CoreControlPlane, createOfficialDocsSchemaArtifact, AppServerSchemaRegistry } from "@nadovibe/core-kernel";
+import { createBuildMetadata } from "@nadovibe/core-operations";
 
 const port = Number.parseInt(process.env.CORE_CONTROL_PLANE_PORT ?? "8081", 10);
 const core = new CoreControlPlane();
 const registry = new AppServerSchemaRegistry();
 registry.register(createOfficialDocsSchemaArtifact());
+const buildMetadata = createBuildMetadata("core-control-plane");
 
 const server = http.createServer((request, response) => {
   response.setHeader("content-type", "application/json; charset=utf-8");
@@ -17,6 +19,11 @@ const server = http.createServer((request, response) => {
     registry.requireCurrent("official-docs-2026-04-23");
     response.writeHead(200);
     response.end(JSON.stringify({ ok: true, eventCount: core.events.readAll().length }));
+    return;
+  }
+  if (request.method === "GET" && request.url === "/version") {
+    response.writeHead(200);
+    response.end(JSON.stringify(buildMetadata));
     return;
   }
   response.writeHead(404);

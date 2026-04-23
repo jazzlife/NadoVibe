@@ -9,16 +9,28 @@ import {
   normalizeAppServerNotification,
   normalizeApprovalRequest
 } from "@nadovibe/core-kernel";
+import { checkAppServerCompatibility, createBuildMetadata } from "@nadovibe/core-operations";
 
 const port = Number.parseInt(process.env.APP_SERVER_ADAPTER_PORT ?? "8091", 10);
 const registry = new AppServerSchemaRegistry();
 registry.register(createOfficialDocsSchemaArtifact());
+const buildMetadata = createBuildMetadata("app-server-adapter");
 
 const server = http.createServer(async (request, response) => {
   try {
     if (request.url === "/healthz" || request.url === "/readyz") {
       registry.requireCurrent("official-docs-2026-04-23");
       sendJson(response, 200, { ok: true, service: "app-server-adapter", dependency: "core" });
+      return;
+    }
+    if (request.method === "GET" && request.url === "/version") {
+      sendJson(response, 200, {
+        ...buildMetadata,
+        compatibility: checkAppServerCompatibility({
+          protocolVersion: buildMetadata.appServerProtocolVersion,
+          platformVersion: buildMetadata.platformVersion
+        })
+      });
       return;
     }
     if (request.method === "POST" && request.url === "/v1/app-server/method-policy") {

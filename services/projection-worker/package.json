@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@nadovibe/core-kernel": "0.1.0",
+    "@nadovibe/core-operations": "0.1.0",
     "@nadovibe/domain": "0.1.0"
   },
   "exports": {

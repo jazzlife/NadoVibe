@@ -1,0 +1,17 @@
+{
+  "platformVersion": "0.1.0",
+  "eventSchemaVersion": 1,
+  "migrationVersion": 3,
+  "appServerProtocolVersion": "official-docs-2026-04-23",
+  "services": [
+    "core-control-plane",
+    "app-server-adapter",
+    "orchestrator",
+    "workspace-runtime",
+    "projection-worker",
+    "gateway",
+    "web",
+    "ops-health",
+    "sandbox-image"
+  ]
+}

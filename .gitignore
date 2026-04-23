@@ -14,3 +14,9 @@ playwright-report/
 !packages/
 !packages/**
 packages/**/.DS_Store
+
+# Phase 10 durability metrics artifact is source evidence for the suite.
+!reports/
+!reports/artifacts/
+reports/artifacts/*
+!reports/artifacts/durability-suite.json
