@@ -1,0 +1,21 @@
+{
+  "name": "@nadovibe/projection-worker",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@nadovibe/core-kernel": "0.1.0",
+    "@nadovibe/domain": "0.1.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "node dist/server.js"
+  }
+}

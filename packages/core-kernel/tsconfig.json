@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "references": [
+    { "path": "../core-agent" },
+    { "path": "../core-events" },
+    { "path": "../core-protocol" },
+    { "path": "../core-resource" },
+    { "path": "../core-security" },
+    { "path": "../core-workspace" }
+  ]
+}

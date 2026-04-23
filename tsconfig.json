@@ -1,0 +1,22 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/core-events" },
+    { "path": "./packages/core-protocol" },
+    { "path": "./packages/core-security" },
+    { "path": "./packages/core-resource" },
+    { "path": "./packages/core-agent" },
+    { "path": "./packages/core-workspace" },
+    { "path": "./packages/core-kernel" },
+    { "path": "./packages/domain" },
+    { "path": "./packages/api-contract" },
+    { "path": "./packages/ui" },
+    { "path": "./services/core-control-plane" },
+    { "path": "./services/app-server-adapter" },
+    { "path": "./services/orchestrator" },
+    { "path": "./services/workspace-runtime" },
+    { "path": "./services/projection-worker" },
+    { "path": "./apps/gateway" },
+    { "path": "./apps/web" }
+  ]
+}

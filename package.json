@@ -1,0 +1,26 @@
+{
+  "name": "nadovibe-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "tsc -b --pretty false",
+    "lint": "node scripts/lint-boundaries.mjs",
+    "typecheck": "tsc -b --pretty false",
+    "test": "npm run typecheck && npm run lint && node --import tsx --test packages/core-kernel/test/*.test.ts",
+    "core:gate": "npm run test && npm run compose:config && npm run preflight:core",
+    "compose:config": "node infra/portainer/validate-stacks.mjs",
+    "preflight:core": "node infra/portainer/core-stack/preflight.mjs --check-only"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "yaml": "^2.8.1"
+  }
+}

@@ -1,0 +1,23 @@
+name: nadovibe_clients
+
+services:
+  web:
+    image: ${NADOVIBE_WEB_IMAGE:-nadovibe/web:${NADOVIBE_IMAGE_TAG:-local}}
+    restart: unless-stopped
+    command: ["node", "apps/web/dist/server.js"]
+    environment:
+      WEB_PORT: ${WEB_PORT:-5173}
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nadovibe_core_net
+
+networks:
+  nadovibe_core_net:
+    external: true
+    name: nadovibe_core_net

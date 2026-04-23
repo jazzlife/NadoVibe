@@ -1,0 +1,94 @@
+name: nadovibe_local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nadovibe
+      POSTGRES_USER: nadovibe
+      POSTGRES_PASSWORD: nadovibe_dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nadovibe -d nadovibe"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - nadovibe_local_postgres:/var/lib/postgresql/data
+    networks:
+      - nadovibe_local_net
+
+  core-control-plane:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "services/core-control-plane/dist/server.js"]
+    environment:
+      CORE_CONTROL_PLANE_PORT: 8081
+    ports:
+      - "8081:8081"
+    volumes:
+      - ../..:/app:ro
+      - nadovibe_local_event_journal:/var/lib/nadovibe/event-journal
+      - nadovibe_local_audit:/var/log/nadovibe/audit
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8081/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nadovibe_local_net
+
+  gateway:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "apps/gateway/dist/server.js"]
+    environment:
+      GATEWAY_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../..:/app:ro
+    depends_on:
+      core-control-plane:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nadovibe_local_net
+
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "apps/web/dist/server.js"]
+    environment:
+      WEB_PORT: 5173
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../..:/app:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nadovibe_local_net
+
+volumes:
+  nadovibe_local_postgres:
+    name: nadovibe_local_postgres
+  nadovibe_local_event_journal:
+    name: nadovibe_local_event_journal
+  nadovibe_local_audit:
+    name: nadovibe_local_audit
+
+networks:
+  nadovibe_local_net:
+    name: nadovibe_local_net
+    driver: bridge

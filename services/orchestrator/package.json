@@ -1,0 +1,20 @@
+{
+  "name": "@nadovibe/orchestrator",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@nadovibe/core-kernel": "0.1.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "node dist/server.js"
+  }
+}

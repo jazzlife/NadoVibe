@@ -1,0 +1,85 @@
+name: nadovibe_core
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nadovibe}
+      POSTGRES_USER: ${POSTGRES_USER:-nadovibe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-in-portainer-secret}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - nadovibe_postgres_data:/var/lib/postgresql/data
+    networks:
+      - nadovibe_core_net
+
+  nats:
+    image: nats:2.10-alpine
+    restart: unless-stopped
+    command: ["-js", "-sd", "/data", "-m", "8222"]
+    profiles: ["optional-nats"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8222/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - nadovibe_nats_data:/data
+    networks:
+      - nadovibe_core_net
+
+  core-control-plane:
+    image: ${NADOVIBE_CORE_IMAGE:-nadovibe/core-control-plane:${NADOVIBE_IMAGE_TAG:-local}}
+    restart: unless-stopped
+    working_dir: /app
+    command: ["node", "services/core-control-plane/dist/server.js"]
+    environment:
+      CORE_CONTROL_PLANE_PORT: ${CORE_CONTROL_PLANE_PORT:-8081}
+      NODE_ENV: production
+    ports:
+      - "${CORE_CONTROL_PLANE_PORT:-8081}:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8081/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - nadovibe_event_journal:/var/lib/nadovibe/event-journal
+      - nadovibe_app_server_state:/var/lib/nadovibe/app-server-state
+      - nadovibe_audit_logs:/var/log/nadovibe/audit
+      - nadovibe_backups:/var/backups/nadovibe
+    networks:
+      - nadovibe_core_net
+
+volumes:
+  nadovibe_postgres_data:
+    name: nadovibe_postgres_data
+  nadovibe_nats_data:
+    name: nadovibe_nats_data
+  nadovibe_event_journal:
+    name: nadovibe_event_journal
+  nadovibe_object_store:
+    name: nadovibe_object_store
+  nadovibe_repositories:
+    name: nadovibe_repositories
+  nadovibe_workspaces:
+    name: nadovibe_workspaces
+  nadovibe_app_server_state:
+    name: nadovibe_app_server_state
+  nadovibe_audit_logs:
+    name: nadovibe_audit_logs
+  nadovibe_backups:
+    name: nadovibe_backups
+
+networks:
+  nadovibe_core_net:
+    name: nadovibe_core_net
+    driver: bridge

@@ -1,0 +1,29 @@
+name: nadovibe_ops_observability
+
+services:
+  ops-health:
+    image: ${NADOVIBE_OPS_HEALTH_IMAGE:-nadovibe/web:${NADOVIBE_IMAGE_TAG:-local}}
+    restart: unless-stopped
+    command: ["node", "apps/web/dist/server.js"]
+    environment:
+      WEB_PORT: ${OPS_HEALTH_PORT:-8099}
+    ports:
+      - "${OPS_HEALTH_PORT:-8099}:8099"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8099/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - nadovibe_ops_logs:/var/log/nadovibe/ops
+    networks:
+      - nadovibe_core_net
+
+volumes:
+  nadovibe_ops_logs:
+    name: nadovibe_ops_logs
+
+networks:
+  nadovibe_core_net:
+    external: true
+    name: nadovibe_core_net

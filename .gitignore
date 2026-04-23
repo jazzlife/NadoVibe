@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# This monorepo's packages directory is source code. Some developer machines
+# globally ignore generic Packages folders, so explicitly keep it tracked here.
+!packages/
+!packages/**

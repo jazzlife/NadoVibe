@@ -1,0 +1,52 @@
+name: nadovibe_app_server_adapter
+
+services:
+  app-server-adapter:
+    image: ${NADOVIBE_APP_SERVER_ADAPTER_IMAGE:-nadovibe/app-server-adapter:${NADOVIBE_IMAGE_TAG:-local}}
+    restart: unless-stopped
+    command: ["node", "services/app-server-adapter/dist/server.js"]
+    environment:
+      APP_SERVER_ADAPTER_PORT: ${APP_SERVER_ADAPTER_PORT:-8091}
+    ports:
+      - "${APP_SERVER_ADAPTER_PORT:-8091}:8091"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8091/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - nadovibe_app_server_state:/var/lib/nadovibe/app-server-state
+      - nadovibe_adapter_logs:/var/log/nadovibe/adapter
+    networks:
+      - nadovibe_core_net
+
+  orchestrator:
+    image: ${NADOVIBE_ORCHESTRATOR_IMAGE:-nadovibe/orchestrator:${NADOVIBE_IMAGE_TAG:-local}}
+    restart: unless-stopped
+    command: ["node", "services/orchestrator/dist/server.js"]
+    environment:
+      ORCHESTRATOR_PORT: ${ORCHESTRATOR_PORT:-8092}
+    ports:
+      - "${ORCHESTRATOR_PORT:-8092}:8092"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8092/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - nadovibe_orchestrator_logs:/var/log/nadovibe/orchestrator
+    networks:
+      - nadovibe_core_net
+
+volumes:
+  nadovibe_app_server_state:
+    name: nadovibe_app_server_state
+  nadovibe_adapter_logs:
+    name: nadovibe_adapter_logs
+  nadovibe_orchestrator_logs:
+    name: nadovibe_orchestrator_logs
+
+networks:
+  nadovibe_core_net:
+    external: true
+    name: nadovibe_core_net

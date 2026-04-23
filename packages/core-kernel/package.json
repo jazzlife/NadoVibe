@@ -1,0 +1,22 @@
+{
+  "name": "@nadovibe/core-kernel",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@nadovibe/core-agent": "0.1.0",
+    "@nadovibe/core-events": "0.1.0",
+    "@nadovibe/core-protocol": "0.1.0",
+    "@nadovibe/core-resource": "0.1.0",
+    "@nadovibe/core-security": "0.1.0",
+    "@nadovibe/core-workspace": "0.1.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ]
+}

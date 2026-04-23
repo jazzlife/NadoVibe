@@ -1,0 +1,38 @@
+name: nadovibe_workspace_runtime
+
+services:
+  workspace-runtime:
+    image: ${NADOVIBE_WORKSPACE_RUNTIME_IMAGE:-nadovibe/workspace-runtime:${NADOVIBE_IMAGE_TAG:-local}}
+    restart: unless-stopped
+    command: ["node", "services/workspace-runtime/dist/server.js"]
+    environment:
+      WORKSPACE_RUNTIME_PORT: ${WORKSPACE_RUNTIME_PORT:-8093}
+    ports:
+      - "${WORKSPACE_RUNTIME_PORT:-8093}:8093"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8093/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - nadovibe_repositories:/var/lib/nadovibe/repositories
+      - nadovibe_workspaces:/var/lib/nadovibe/workspaces
+      - nadovibe_artifacts:/var/lib/nadovibe/artifacts
+      - nadovibe_workspace_logs:/var/log/nadovibe/workspace-runtime
+    networks:
+      - nadovibe_core_net
+
+volumes:
+  nadovibe_repositories:
+    name: nadovibe_repositories
+  nadovibe_workspaces:
+    name: nadovibe_workspaces
+  nadovibe_artifacts:
+    name: nadovibe_artifacts
+  nadovibe_workspace_logs:
+    name: nadovibe_workspace_logs
+
+networks:
+  nadovibe_core_net:
+    external: true
+    name: nadovibe_core_net
