@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import test from "node:test";
 import {
   assertPublicResponseSafe,
@@ -80,11 +82,48 @@ test("web shell includes required IDE control surface regions and responsive con
   ]) {
     assert.match(html, new RegExp(`id="${id}"`));
   }
+  assert.match(html, /class="skip-link" href="#mainControlSurface"/);
+  assert.match(html, /<main id="mainControlSurface" class="ide-grid">/);
   assert.match(css, /grid-template-columns: var\(--rail-width\) minmax\(0, 1fr\) var\(--inspector-width\)/);
   assert.match(css, /@media \(max-width: 900px\)/);
   assert.match(css, /@media \(max-width: 680px\)/);
   assert.match(css, /focus-visible/);
   assert.doesNotMatch(html + css, /landing|marketing/i);
+});
+
+test("phase 6 Pencil design source matches the implemented shell tokens", () => {
+  const phase06PenPath = resolve(process.cwd(), "design/phase06.pen");
+  const design = JSON.parse(readFileSync(phase06PenPath, "utf8")) as {
+    version?: string;
+    variables?: Record<string, { type: string; value: unknown }>;
+    children?: Array<{ id?: string; name?: string; width?: unknown; height?: unknown; children?: unknown[] }>;
+  };
+  const variables = design.variables ?? {};
+  const root = design.children?.[0];
+  const css = renderShellCss();
+  const html = renderControlRoomHtml();
+
+  assert.equal(design.version, "2.10");
+  assert.ok(root);
+  assert.equal(root.id, "bi8Au");
+  assert.match(root.name ?? "", /Phase 06/);
+  assert.equal(root.width, 1440);
+  assert.equal(root.height, 960);
+  assert.ok((root.children?.length ?? 0) >= 2);
+
+  for (const token of ["phase06/color/canvas", "phase06/color/chrome", "phase06/color/accent", "phase06/layout/railWidth", "phase06/layout/inspectorWidth"]) {
+    assert.ok(variables[token], `missing Pencil token ${token}`);
+  }
+  assert.equal(variables["phase06/color/canvas"]?.value, "#EEF2EC");
+  assert.equal(variables["phase06/color/chrome"]?.value, "#111827");
+  assert.equal(variables["phase06/color/accent"]?.value, "#22A06B");
+  assert.equal(variables["phase06/layout/railWidth"]?.value, 292);
+  assert.equal(variables["phase06/layout/inspectorWidth"]?.value, 430);
+
+  for (const value of ["#EEF2EC", "#111827", "#22A06B", "292px", "430px"]) {
+    assert.match(css, new RegExp(value.replace("#", "\\#")));
+  }
+  assert.match(html, /Skip to control surface/);
 });
 
 test("generated Gateway browser client covers phase 6 mutations and realtime reconnect entrypoint", () => {

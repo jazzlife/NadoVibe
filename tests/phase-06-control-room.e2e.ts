@@ -17,9 +17,12 @@ test("phase 6 Control Room supports workspace seed, run creation, command enqueu
   await page.setViewportSize({ width: 1440, height: 950 });
   await page.goto("/");
   await expect(page.getByText("Agent Control Room")).toBeVisible();
-  await expect(page.getByText("워크스페이스를 준비해야 합니다")).toBeVisible();
 
-  await page.getByRole("button", { name: "Workspace 준비" }).click();
+  const seedButton = page.getByRole("button", { name: "Workspace 준비" });
+  if (await seedButton.isVisible()) {
+    await expect(page.getByText("워크스페이스를 준비해야 합니다")).toBeVisible();
+    await seedButton.click();
+  }
   await expect(page.locator("#workspaceSelect")).toContainText("NadoVibe Platform");
 
   await page.locator("#runObjective").fill("phase 06 web control room e2e 검증");

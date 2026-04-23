@@ -13,3 +13,4 @@ playwright-report/
 # globally ignore generic Packages folders, so explicitly keep it tracked here.
 !packages/
 !packages/**
+packages/**/.DS_Store

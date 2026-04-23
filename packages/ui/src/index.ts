@@ -1,18 +1,23 @@
 export const ideShellTokens = {
   color: {
-    canvas: "#f5f6f0",
-    surface: "#ffffff",
-    surfaceAlt: "#eef4f1",
-    ink: "#1b2421",
-    muted: "#63706b",
-    soft: "#d8e1dc",
-    teal: "#117c6f",
-    indigo: "#3651a8",
-    amber: "#bd6b16",
-    green: "#2f855a",
-    red: "#b43c3c",
-    violet: "#6f4aa8",
-    code: "#151b18"
+    canvas: "#EEF2EC",
+    chrome: "#111827",
+    chromeRaised: "#172033",
+    surface: "#FBFCF8",
+    surfaceAlt: "#EAF3EC",
+    ink: "#17201B",
+    inverse: "#F8FAFC",
+    muted: "#66736F",
+    soft: "#D5DED8",
+    accent: "#22A06B",
+    teal: "#22A06B",
+    indigo: "#3867D6",
+    amber: "#D97706",
+    green: "#22C55E",
+    run: "#22C55E",
+    red: "#B43C3C",
+    violet: "#7256C8",
+    code: "#0F172A"
   },
   radius: {
     panel: "8px",
@@ -37,6 +42,7 @@ export function renderControlRoomHtml(): string {
   <style>${renderShellCss()}</style>
 </head>
 <body>
+  <a class="skip-link" href="#mainControlSurface">Skip to control surface</a>
   <div id="app" class="control-room" data-loading="true">
     <header class="topbar" aria-label="NadoVibe top controls">
       <div class="brand-lockup">
@@ -55,7 +61,7 @@ export function renderControlRoomHtml(): string {
         <span id="connectionState" class="status-pill">연결 준비</span>
       </div>
     </header>
-    <main class="ide-grid">
+    <main id="mainControlSurface" class="ide-grid">
       <aside class="rail-pane" aria-label="Lifecycle and queues">
         <section class="panel">
           <div class="panel-heading">
@@ -227,15 +233,20 @@ export function renderShellCss(): string {
   return `
     :root {
       --canvas: ${ideShellTokens.color.canvas};
+      --chrome: ${ideShellTokens.color.chrome};
+      --chrome-raised: ${ideShellTokens.color.chromeRaised};
       --surface: ${ideShellTokens.color.surface};
       --surface-alt: ${ideShellTokens.color.surfaceAlt};
       --ink: ${ideShellTokens.color.ink};
+      --inverse: ${ideShellTokens.color.inverse};
       --muted: ${ideShellTokens.color.muted};
       --soft: ${ideShellTokens.color.soft};
+      --accent: ${ideShellTokens.color.accent};
       --teal: ${ideShellTokens.color.teal};
       --indigo: ${ideShellTokens.color.indigo};
       --amber: ${ideShellTokens.color.amber};
       --green: ${ideShellTokens.color.green};
+      --run: ${ideShellTokens.color.run};
       --red: ${ideShellTokens.color.red};
       --violet: ${ideShellTokens.color.violet};
       --code: ${ideShellTokens.color.code};
@@ -249,7 +260,7 @@ export function renderShellCss(): string {
     body {
       margin: 0;
       min-height: 100%;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink);
       background: var(--canvas);
       letter-spacing: 0;
@@ -257,10 +268,30 @@ export function renderShellCss(): string {
     button, input, select, textarea { font: inherit; letter-spacing: 0; }
     button, select { cursor: pointer; }
     button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
-      outline: 3px solid color-mix(in srgb, var(--teal) 68%, white);
+      outline: 3px solid color-mix(in srgb, var(--accent) 68%, white);
       outline-offset: 2px;
     }
-    .control-room { min-height: 100vh; display: grid; grid-template-rows: var(--toolbar-height) minmax(0, 1fr); }
+    .skip-link {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 100;
+      transform: translateY(-140%);
+      border-radius: 6px;
+      background: var(--inverse);
+      color: var(--ink);
+      padding: 8px 10px;
+      box-shadow: 0 10px 30px rgba(17, 24, 39, 0.18);
+      transition: transform 160ms ease;
+    }
+    .skip-link:focus-visible { transform: translateY(0); }
+    .control-room {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: var(--toolbar-height) minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
     .topbar {
       display: grid;
       grid-template-columns: minmax(240px, 320px) minmax(0, 1fr) auto;
@@ -268,23 +299,25 @@ export function renderShellCss(): string {
       gap: 14px;
       min-width: 0;
       padding: 0 18px;
-      border-bottom: 1px solid var(--soft);
-      background: rgba(255, 255, 255, 0.94);
-      position: sticky;
-      top: 0;
+      border: 1px solid #263349;
+      border-radius: 8px;
+      background: var(--chrome);
+      color: var(--inverse);
+      position: relative;
+      top: auto;
       z-index: 50;
     }
     .brand-lockup { display: flex; align-items: center; gap: 11px; min-width: 0; }
     .brand-lockup strong { display: block; font-size: 15px; }
-    .brand-lockup span:last-child { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand-lockup span:last-child { display: block; color: #b9c6c0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .brand-mark {
       width: 36px;
       height: 36px;
       border-radius: 8px;
       display: grid;
       place-items: center;
-      background: var(--teal);
-      color: white;
+      background: var(--accent);
+      color: var(--inverse);
       font-weight: 700;
       font-size: 13px;
       flex: 0 0 auto;
@@ -296,10 +329,16 @@ export function renderShellCss(): string {
       min-height: 38px;
       border: 1px solid var(--soft);
       border-radius: 6px;
-      background: #fff;
+      background: var(--inverse);
       color: var(--ink);
       padding: 0 10px;
       min-width: 0;
+    }
+    .topbar label span { color: #b9c6c0; }
+    .topbar select {
+      border-color: #263349;
+      background: var(--chrome-raised);
+      color: var(--inverse);
     }
     .topbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
     .status-pill, .count-badge, .state-badge {
@@ -311,19 +350,25 @@ export function renderShellCss(): string {
       border-radius: 999px;
       padding: 0 9px;
       color: var(--muted);
-      background: #fff;
+      background: var(--inverse);
       white-space: nowrap;
       font-size: 12px;
     }
     .status-pill[data-state="connected"], .state-badge.ready, .state-badge.completed, .state-badge.done { color: var(--green); border-color: color-mix(in srgb, var(--green) 35%, white); }
     .status-pill[data-state="reconnecting"], .state-badge.preparing, .state-badge.recovering { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 35%, white); }
     .state-badge.failed, .state-badge.cancelled, .status-pill[data-state="offline"] { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, white); }
+    .topbar .status-pill {
+      background: #193125;
+      border-color: #2d6b4a;
+      color: var(--run);
+      font-weight: 600;
+    }
     .ide-grid {
       display: grid;
       grid-template-columns: var(--rail-width) minmax(0, 1fr) var(--inspector-width);
       gap: 10px;
       min-height: 0;
-      padding: 10px;
+      padding: 0;
     }
     .rail-pane, .work-pane, .inspector-pane {
       min-width: 0;
@@ -348,7 +393,7 @@ export function renderShellCss(): string {
       gap: 10px;
       padding: 0 12px;
       border-bottom: 1px solid var(--soft);
-      background: linear-gradient(180deg, #fff, #fbfcfa);
+      background: var(--surface-alt);
     }
     h1, h2, h3, p { margin: 0; }
     h2 { font-size: 13px; font-weight: 700; }
@@ -374,12 +419,12 @@ export function renderShellCss(): string {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+      transition: background 180ms ease, border-color 180ms ease, color 180ms ease, filter 180ms ease;
     }
-    .primary-button { background: var(--teal); color: #fff; }
-    .secondary-button { background: var(--surface-alt); color: var(--teal); border-color: color-mix(in srgb, var(--teal) 28%, white); }
-    .ghost-button { background: #fff; color: var(--ink); border-color: var(--soft); }
-    .primary-button:hover, .secondary-button:hover, .ghost-button:hover { transform: translateY(-1px); }
+    .primary-button { background: var(--accent); color: var(--inverse); }
+    .secondary-button { background: var(--surface-alt); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 28%, white); }
+    .ghost-button { background: var(--inverse); color: var(--ink); border-color: var(--soft); }
+    .primary-button:hover, .secondary-button:hover, .ghost-button:hover { filter: brightness(0.97); }
     .button-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .split-board { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; min-width: 0; }
     .virtual-list { max-height: 360px; overflow: auto; contain: content; }
@@ -396,7 +441,7 @@ export function renderShellCss(): string {
       padding: 9px;
       display: grid;
       gap: 6px;
-      background: #fff;
+      background: var(--inverse);
       min-width: 0;
     }
     .list-item strong, .list-item span, .list-item p { min-width: 0; overflow-wrap: anywhere; }
@@ -407,13 +452,13 @@ export function renderShellCss(): string {
     .lifecycle-step { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: center; min-height: 36px; color: var(--muted); }
     .step-dot { width: 12px; height: 12px; border-radius: 999px; border: 2px solid var(--soft); }
     .lifecycle-step.done .step-dot { background: var(--green); border-color: var(--green); }
-    .lifecycle-step.active .step-dot { background: var(--teal); border-color: var(--teal); box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 16%, transparent); }
-    .agent-node { border-left: 3px solid var(--teal); }
+    .lifecycle-step.active .step-dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
+    .agent-node { border-left: 3px solid var(--accent); }
     .agent-node[data-role="TaskSupervisorAgent"] { border-left-color: var(--indigo); margin-left: 12px; }
     .agent-node[data-role="RoleAgent"] { border-left-color: var(--violet); margin-left: 24px; }
     .inline-form { display: grid; grid-template-columns: minmax(0, 1fr) 120px 104px; gap: 8px; padding: 10px; border-bottom: 1px solid var(--soft); }
     .health-strip { padding: 10px; display: grid; gap: 7px; }
-    .health-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; border-bottom: 1px solid #eef2ef; }
+    .health-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; border-bottom: 1px solid var(--surface-alt); }
     .health-item:last-child { border-bottom: 0; }
     .code-split { display: grid; grid-template-columns: 170px minmax(0, 1fr); min-height: 240px; border-bottom: 1px solid var(--soft); }
     .file-tree { border-right: 1px solid var(--soft); max-height: 260px; padding: 8px; }
@@ -447,7 +492,7 @@ export function renderShellCss(): string {
     }
     .terminal-output { min-height: 160px; max-height: 240px; }
     .empty-state {
-      border: 1px dashed color-mix(in srgb, var(--teal) 42%, white);
+      border: 1px dashed color-mix(in srgb, var(--accent) 42%, white);
       border-radius: 8px;
       padding: 24px;
       background: var(--surface);
@@ -464,14 +509,14 @@ export function renderShellCss(): string {
       display: grid;
       place-items: start center;
       padding-top: 11vh;
-      background: rgba(27, 36, 33, 0.24);
+      background: rgba(17, 24, 39, 0.28);
     }
     .palette-dialog {
       width: min(640px, calc(100vw - 32px));
       border-radius: 8px;
       border: 1px solid var(--soft);
       background: var(--surface);
-      box-shadow: 0 24px 70px rgba(27, 36, 33, 0.22);
+      box-shadow: 0 24px 70px rgba(17, 24, 39, 0.22);
       padding: 12px;
       display: grid;
       gap: 8px;
