@@ -11,6 +11,7 @@ import type {
   WorkspaceEditorSession
 } from "@nadovibe/core-kernel";
 import { OFFICIAL_DOC_METHODS, validateMethodPolicyCoverage } from "@nadovibe/core-kernel";
+import { createDefaultAppServerCapabilityRegistry, type AppServerCapabilityRegistry } from "@nadovibe/core-kernel";
 
 export type EnvironmentProfile = "local" | "staging" | "production";
 export type PlatformServiceName =
@@ -170,6 +171,7 @@ export interface AppServerCompatibilityInput {
   readonly protocolVersion: string;
   readonly platformVersion: string;
   readonly methods?: readonly string[];
+  readonly capabilityRegistry?: AppServerCapabilityRegistry;
 }
 
 export interface AppServerCompatibilityResult {
@@ -611,11 +613,12 @@ export function migrateEventSchemaArtifact(artifact: GeneratedAppServerSchemaArt
 }
 
 export function checkAppServerCompatibility(input: AppServerCompatibilityInput): AppServerCompatibilityResult {
+  const registry = input.capabilityRegistry ?? createDefaultAppServerCapabilityRegistry();
   const methods = input.methods ?? OFFICIAL_DOC_METHODS;
-  const missingMethodPolicies = validateMethodPolicyCoverage(methods);
+  const missingMethodPolicies = registry.validateCoverage(methods);
   const blockingReasons: string[] = [];
-  if (!SUPPORTED_APP_SERVER_PROTOCOLS.includes(input.protocolVersion as (typeof SUPPORTED_APP_SERVER_PROTOCOLS)[number])) {
-    blockingReasons.push(`unsupported app-server protocol version: ${input.protocolVersion}`);
+  if (!SUPPORTED_APP_SERVER_PROTOCOLS.includes(input.protocolVersion as (typeof SUPPORTED_APP_SERVER_PROTOCOLS)[number]) && input.methods === undefined) {
+    blockingReasons.push(`unsupported app-server protocol version without schema artifact: ${input.protocolVersion}`);
   }
   if (missingMethodPolicies.length > 0) {
     blockingReasons.push(`unclassified app-server methods: ${missingMethodPolicies.join(", ")}`);

@@ -1,6 +1,6 @@
 export type JsonRpcId = string | number;
 export type MethodPolicyAction = "allow" | "deny" | "route";
-export type MethodPolicyFamily =
+export type KnownMethodPolicyFamily =
   | "handshake"
   | "stable_read"
   | "thread_control"
@@ -9,6 +9,7 @@ export type MethodPolicyFamily =
   | "workspace_side_effect"
   | "configuration_mutation"
   | "experimental_mutation";
+export type MethodPolicyFamily = KnownMethodPolicyFamily | (string & {});
 
 export interface JsonRpcRequest {
   readonly id: JsonRpcId;
@@ -41,6 +42,24 @@ export interface MethodPolicy {
   readonly requiredFeatureFlag?: string;
 }
 
+export type AppServerMethodPolicyMatcher = (method: string) => MethodPolicy | undefined;
+
+export interface AppServerCapabilityModule {
+  readonly id: string;
+  readonly title: string;
+  readonly version: string;
+  readonly methods: readonly string[];
+  readonly policies?: readonly MethodPolicy[];
+  readonly matchers?: readonly AppServerMethodPolicyMatcher[];
+}
+
+export interface AppServerCapabilityModuleSummary {
+  readonly id: string;
+  readonly title: string;
+  readonly version: string;
+  readonly methodCount: number;
+}
+
 export interface GeneratedAppServerSchemaArtifact {
   readonly codexVersion: string;
   readonly generatedAt: string;
@@ -65,22 +84,7 @@ export interface AppServerClientInfo {
 }
 
 export interface AppServerPlatformEvent {
-  readonly type:
-    | "app_server.session_requested"
-    | "app_server.session_created"
-    | "app_server.session_connected"
-    | "app_server.thread_bound"
-    | "app_server.turn_started"
-    | "app_server.item_started"
-    | "app_server.item_completed"
-    | "app_server.event_received"
-    | "app_server.approval_requested"
-    | "app_server.approval_delivered"
-    | "app_server.reconnect_started"
-    | "app_server.reattached"
-    | "app_server.recovering"
-    | "app_server.closed"
-    | "app_server.failed";
+  readonly type: string;
   readonly appServerMethod: string;
   readonly tenantId: string;
   readonly runId: string;
@@ -132,6 +136,73 @@ export const APP_SERVER_CLIENT_INFO: AppServerClientInfo = {
 };
 
 export const APP_SERVER_THREAD_SERVICE_NAME = "nadovibe.app-server-adapter";
+
+export class AppServerCapabilityRegistry {
+  private readonly modules = new Map<string, AppServerCapabilityModule>();
+  private readonly exactPolicies = new Map<string, MethodPolicy>();
+  private readonly matchers: AppServerMethodPolicyMatcher[] = [];
+
+  constructor(modules: readonly AppServerCapabilityModule[] = []) {
+    for (const module of modules) {
+      this.registerModule(module);
+    }
+  }
+
+  registerModule(module: AppServerCapabilityModule): void {
+    validateCapabilityModule(module);
+    if (this.modules.has(module.id)) {
+      throw new ProtocolError(`Duplicate app-server capability module: ${module.id}`);
+    }
+    this.modules.set(module.id, module);
+    for (const policy of module.policies ?? []) {
+      const existing = this.exactPolicies.get(policy.method);
+      if (existing && JSON.stringify(existing) !== JSON.stringify(policy)) {
+        throw new ProtocolError(`Conflicting app-server method policy for ${policy.method}`);
+      }
+      this.exactPolicies.set(policy.method, policy);
+    }
+    this.matchers.push(...(module.matchers ?? []));
+  }
+
+  classify(method: string): MethodPolicy {
+    const exact = this.exactPolicies.get(method);
+    if (exact) {
+      return exact;
+    }
+    for (const matcher of this.matchers) {
+      const matched = matcher(method);
+      if (matched) {
+        return matched;
+      }
+    }
+    throw new ProtocolError(`Unclassified app-server method: ${method}`);
+  }
+
+  validateCoverage(methods: readonly string[]): readonly string[] {
+    const missing: string[] = [];
+    for (const method of methods) {
+      try {
+        this.classify(method);
+      } catch {
+        missing.push(method);
+      }
+    }
+    return missing;
+  }
+
+  methods(): readonly string[] {
+    return [...new Set([...this.modules.values()].flatMap((module) => module.methods))];
+  }
+
+  summaries(): readonly AppServerCapabilityModuleSummary[] {
+    return [...this.modules.values()].map((module) => ({
+      id: module.id,
+      title: module.title,
+      version: module.version,
+      methodCount: module.methods.length
+    }));
+  }
+}
 
 export const OFFICIAL_DOC_METHODS = [
   "initialize",
@@ -239,24 +310,129 @@ function policy(
     : { method, family, action, reason, requiredFeatureFlag };
 }
 
+export const DEFAULT_APP_SERVER_CAPABILITY_MODULES: readonly AppServerCapabilityModule[] = [
+  {
+    id: "app-server.official-docs-baseline",
+    title: "Official app-server baseline protocol",
+    version: "official-docs-2026-04-23",
+    methods: OFFICIAL_DOC_METHODS,
+    policies: [...EXACT_POLICIES.values()],
+    matchers: [
+      workspaceSideEffectPolicy,
+      approvalRelayPolicy,
+      turnControlPolicy,
+      threadControlPolicy,
+      stableReadPolicy,
+      notificationPolicy,
+      interactiveExternalAccessPolicy
+    ]
+  }
+];
+
+export function createDefaultAppServerCapabilityRegistry(): AppServerCapabilityRegistry {
+  return new AppServerCapabilityRegistry(DEFAULT_APP_SERVER_CAPABILITY_MODULES);
+}
+
+const DEFAULT_APP_SERVER_CAPABILITY_REGISTRY = createDefaultAppServerCapabilityRegistry();
+
 export function classifyAppServerMethod(method: string): MethodPolicy {
-  const exact = EXACT_POLICIES.get(method);
-  if (exact) {
-    return exact;
+  return DEFAULT_APP_SERVER_CAPABILITY_REGISTRY.classify(method);
+}
+
+export function validateMethodPolicyCoverage(methods: readonly string[]): readonly string[] {
+  return DEFAULT_APP_SERVER_CAPABILITY_REGISTRY.validateCoverage(methods);
+}
+
+export class AppServerSchemaRegistry {
+  private artifact: GeneratedAppServerSchemaArtifact | undefined;
+
+  constructor(private readonly capabilities: AppServerCapabilityRegistry = createDefaultAppServerCapabilityRegistry()) {}
+
+  registerCapabilityModule(module: AppServerCapabilityModule): void {
+    this.capabilities.registerModule(module);
   }
 
+  register(artifact: GeneratedAppServerSchemaArtifact): void {
+    const missing = this.capabilities.validateCoverage(artifact.methods);
+    if (missing.length > 0) {
+      throw new ProtocolError(`Cannot register schema with unclassified methods: ${missing.join(", ")}`);
+    }
+    this.artifact = artifact;
+  }
+
+  requireCurrent(codexVersion: string): GeneratedAppServerSchemaArtifact {
+    if (!this.artifact) {
+      throw new ProtocolError("App-server schema artifact has not been registered");
+    }
+    if (this.artifact.codexVersion !== codexVersion) {
+      throw new ProtocolError(`App-server schema version mismatch: expected ${codexVersion}, actual ${this.artifact.codexVersion}`);
+    }
+    return this.artifact;
+  }
+
+  methodPolicy(method: string): MethodPolicy {
+    return this.capabilities.classify(method);
+  }
+
+  capabilitySummaries(): readonly AppServerCapabilityModuleSummary[] {
+    return this.capabilities.summaries();
+  }
+}
+
+export function createOfficialDocsSchemaArtifact(codexVersion = "official-docs-2026-04-23"): GeneratedAppServerSchemaArtifact {
+  return {
+    codexVersion,
+    generatedAt: "2026-04-23T00:00:00.000Z",
+    generatorCommand: "official-docs-snapshot",
+    protocolFacts: OFFICIAL_APP_SERVER_FACTS,
+    methods: OFFICIAL_DOC_METHODS
+  };
+}
+
+function validateCapabilityModule(module: AppServerCapabilityModule): void {
+  if (module.id.trim().length === 0 || module.title.trim().length === 0 || module.version.trim().length === 0) {
+    throw new ProtocolError("App-server capability module requires id, title, and version");
+  }
+  if (module.methods.length === 0) {
+    throw new ProtocolError(`App-server capability module ${module.id} must declare at least one method`);
+  }
+  for (const method of module.methods) {
+    if (method.trim().length === 0) {
+      throw new ProtocolError(`App-server capability module ${module.id} contains an empty method`);
+    }
+  }
+  for (const policy of module.policies ?? []) {
+    if (!module.methods.includes(policy.method)) {
+      throw new ProtocolError(`App-server capability module ${module.id} has policy for undeclared method ${policy.method}`);
+    }
+  }
+}
+
+function workspaceSideEffectPolicy(method: string): MethodPolicy | undefined {
   if (method.startsWith("command/exec")) {
     return policy(method, "workspace_side_effect", "route", "command execution must route through Workspace Runtime policy");
   }
   if (method.startsWith("fs/")) {
     return policy(method, "workspace_side_effect", "route", "filesystem access must route through WorkScope and FileLease policy");
   }
+  return undefined;
+}
+
+function approvalRelayPolicy(method: string): MethodPolicy | undefined {
   if (method.includes("requestApproval") || method === "serverRequest/resolved") {
     return policy(method, "approval_relay", "route", "approval requests are mirrored as platform ApprovalRequest records");
   }
+  return undefined;
+}
+
+function turnControlPolicy(method: string): MethodPolicy | undefined {
   if (method.startsWith("turn/") || method === "thread/inject_items" || method === "review/start") {
     return policy(method, "turn_control", "route", "turn operations must mirror durable Core state");
   }
+  return undefined;
+}
+
+function threadControlPolicy(method: string): MethodPolicy | undefined {
   if (
     method.startsWith("thread/start") ||
     method.startsWith("thread/resume") ||
@@ -271,6 +447,10 @@ export function classifyAppServerMethod(method: string): MethodPolicy {
   ) {
     return policy(method, "thread_control", "route", "thread control must be mirrored in Core state");
   }
+  return undefined;
+}
+
+function stableReadPolicy(method: string): MethodPolicy | undefined {
   if (
     method.startsWith("thread/read") ||
     method.startsWith("thread/list") ||
@@ -291,6 +471,10 @@ export function classifyAppServerMethod(method: string): MethodPolicy {
   ) {
     return policy(method, "stable_read", "allow", "read-only method can be allowed after Core compatibility checks");
   }
+  return undefined;
+}
+
+function notificationPolicy(method: string): MethodPolicy | undefined {
   if (
     method.endsWith("/changed") ||
     method.endsWith("/completed") ||
@@ -302,55 +486,14 @@ export function classifyAppServerMethod(method: string): MethodPolicy {
   ) {
     return policy(method, "stable_read", "route", "notification must be ingested with offset and replay markers");
   }
+  return undefined;
+}
+
+function interactiveExternalAccessPolicy(method: string): MethodPolicy | undefined {
   if (method === "mcpServer/oauth/login" || method === "mcpServer/tool/call" || method === "tool/requestUserInput") {
     return policy(method, "approval_relay", "route", "interactive external access must become a Core approval or tool request");
   }
-
-  throw new ProtocolError(`Unclassified app-server method: ${method}`);
-}
-
-export function validateMethodPolicyCoverage(methods: readonly string[]): readonly string[] {
-  const missing: string[] = [];
-  for (const method of methods) {
-    try {
-      classifyAppServerMethod(method);
-    } catch {
-      missing.push(method);
-    }
-  }
-  return missing;
-}
-
-export class AppServerSchemaRegistry {
-  private artifact: GeneratedAppServerSchemaArtifact | undefined;
-
-  register(artifact: GeneratedAppServerSchemaArtifact): void {
-    const missing = validateMethodPolicyCoverage(artifact.methods);
-    if (missing.length > 0) {
-      throw new ProtocolError(`Cannot register schema with unclassified methods: ${missing.join(", ")}`);
-    }
-    this.artifact = artifact;
-  }
-
-  requireCurrent(codexVersion: string): GeneratedAppServerSchemaArtifact {
-    if (!this.artifact) {
-      throw new ProtocolError("App-server schema artifact has not been registered");
-    }
-    if (this.artifact.codexVersion !== codexVersion) {
-      throw new ProtocolError(`App-server schema version mismatch: expected ${codexVersion}, actual ${this.artifact.codexVersion}`);
-    }
-    return this.artifact;
-  }
-}
-
-export function createOfficialDocsSchemaArtifact(codexVersion = "official-docs-2026-04-23"): GeneratedAppServerSchemaArtifact {
-  return {
-    codexVersion,
-    generatedAt: "2026-04-23T00:00:00.000Z",
-    generatorCommand: "official-docs-snapshot",
-    protocolFacts: OFFICIAL_APP_SERVER_FACTS,
-    methods: OFFICIAL_DOC_METHODS
-  };
+  return undefined;
 }
 
 export function createInitializeRequest(id: JsonRpcId, clientInfo: AppServerClientInfo = APP_SERVER_CLIENT_INFO): JsonRpcRequest {

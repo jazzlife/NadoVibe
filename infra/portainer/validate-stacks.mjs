@@ -100,6 +100,12 @@ function validateMount(file, serviceName, mount, volumeNames, allowBindMounts) {
   }
   const isBindMount = source.startsWith(".") || source.startsWith("/");
   if (isBindMount) {
+    if (serviceName === "workspace-runtime" && source === "/var/run/docker.sock" && target === "/var/run/docker.sock") {
+      return;
+    }
+    if (serviceName === "workspace-runtime" && file.includes("/infra/local/") && target === "/workspace" && mode === "rw") {
+      return;
+    }
     if (!allowBindMounts) {
       throw new Error(`${file} service ${serviceName} uses bind mount in Portainer stack: ${mount}`);
     }

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   assertPublicResponseSafe,
@@ -70,4 +71,25 @@ test("public response safety check catches forbidden internal terms and secret d
   assert.throws(() => assertPublicResponseSafe({ state: "waiting_for_capacity" }), /Public response/);
   assert.throws(() => assertPublicResponseSafe({ token: "secret" }), /Public response/);
   assert.doesNotThrow(() => assertPublicResponseSafe({ state: "preparing" }));
+});
+
+test("gateway uses remote Core Control Plane instead of an in-process Core authority", () => {
+  const source = readFileSync("apps/gateway/src/server.ts", "utf8");
+  assert.match(source, /class CoreControlPlaneClient/);
+  assert.match(source, /CORE_CONTROL_PLANE_URL/);
+  assert.doesNotMatch(source, /new CoreControlPlane\(/);
+});
+
+test("gateway delegates workspace file access to Workspace Runtime", () => {
+  const source = readFileSync("apps/gateway/src/server.ts", "utf8");
+  assert.match(source, /class WorkspaceRuntimeClient/);
+  assert.match(source, /WORKSPACE_RUNTIME_URL/);
+  assert.doesNotMatch(source, /from "node:fs"/);
+  assert.doesNotMatch(source, /assertWriteFileAllowed/);
+});
+
+test("core-control-plane does not depend on app-server protocol snapshots", () => {
+  const source = readFileSync("services/core-control-plane/src/server.ts", "utf8");
+  assert.doesNotMatch(source, /AppServerSchemaRegistry/);
+  assert.doesNotMatch(source, /createOfficialDocsSchemaArtifact/);
 });

@@ -16,6 +16,7 @@ import type {
   NotificationSettingsRequest,
   SupervisorControlRequest,
   WorkspaceFileReadRequest,
+  WorkspaceFileReadResponse,
   WorkspaceSearchRequest,
   WorkspaceSearchResponse,
   WorkspaceFileTreeRequest,
@@ -38,7 +39,7 @@ export interface GeneratedGatewayClient {
   changeEditorSession(request: EditorSessionRequest): Promise<ControlRoomProjectionResponse>;
   decideFinalReview(request: FinalReviewDecisionRequest): Promise<ControlRoomProjectionResponse>;
   readFileTree(request: WorkspaceFileTreeRequest): Promise<{ readonly items: readonly unknown[] }>;
-  readFile(request: WorkspaceFileReadRequest): Promise<{ readonly path: string; readonly content: string }>;
+  readFile(request: WorkspaceFileReadRequest): Promise<WorkspaceFileReadResponse>;
   writeFile(request: WorkspaceFileWriteRequest): Promise<ControlRoomProjectionResponse>;
   searchWorkspace(request: WorkspaceSearchRequest): Promise<WorkspaceSearchResponse>;
   decideHunk(request: HunkDecisionRequest): Promise<ControlRoomProjectionResponse>;

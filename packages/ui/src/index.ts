@@ -1977,6 +1977,8 @@ const state = {
   workspaceId: undefined,
   runId: undefined,
   filePath: undefined,
+  fileLeaseId: undefined,
+  fileLeaseExpiresAt: 0,
   originalContent: '',
   dirty: false,
   online: navigator.onLine,
@@ -2075,7 +2077,8 @@ function renderGuard() {
   }
   for (const id of ['saveFileButton', 'askSelectionButton', 'testSelectionButton']) {
     const button = $(id);
-    if (button) button.disabled = !canExecute() || (id !== 'testSelectionButton' && !state.filePath);
+    if (button && id === 'saveFileButton') button.disabled = !canExecute() || !state.filePath || !state.fileLeaseId || Date.now() >= state.fileLeaseExpiresAt;
+    if (button && id !== 'saveFileButton') button.disabled = !canExecute() || (id !== 'testSelectionButton' && !state.filePath);
   }
   $('revertFileButton').disabled = !state.filePath || !state.dirty;
 }
@@ -2177,6 +2180,8 @@ async function openFile(path) {
   if (state.dirty && !confirm('저장하지 않은 변경을 버리고 다른 파일을 여시겠습니까?')) return;
   const result = await client.readFile({ workspaceId: state.workspaceId || 'workspace_dev', path });
   state.filePath = result.path;
+  state.fileLeaseId = result.fileLeaseId;
+  state.fileLeaseExpiresAt = result.leaseExpiresAt;
   state.originalContent = result.content;
   state.dirty = false;
   mountEditor(result.content);
@@ -2185,12 +2190,15 @@ async function openFile(path) {
 
 async function saveFile() {
   if (!canExecute() || !state.filePath) return;
+  if (!state.fileLeaseId || Date.now() >= state.fileLeaseExpiresAt) {
+    throw new Error('파일 편집 권한이 만료되었습니다. 파일을 다시 여십시오.');
+  }
   const content = state.editor.state.doc.toString();
   state.projection = await client.writeFile({
     workspaceId: state.workspaceId || 'workspace_dev',
     path: state.filePath,
     content,
-    fileLeaseId: 'lease_tablet_' + sanitizeId(state.filePath),
+    fileLeaseId: state.fileLeaseId,
     idempotencyKey: idempotency('file_write')
   });
   state.originalContent = content;
@@ -2359,9 +2367,6 @@ function reportError(error) {
   $('workbenchApp').dataset.connection = 'offline';
 }
 
-function sanitizeId(value) {
-  return String(value).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80);
-}
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 }

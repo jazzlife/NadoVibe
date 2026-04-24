@@ -1,6 +1,4 @@
 import http from "node:http";
-import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import path from "node:path";
 import {
   assertPublicResponseSafe,
   mapCommandIntentToResourceClass,
@@ -41,24 +39,160 @@ import type {
   MobilePushRegistrationRequest,
   NotificationReadRequest,
   NotificationSettingsRequest,
-  SupervisorControlRequest
+  SupervisorControlRequest,
+  WorkspaceFileReadResponse,
+  WorkspaceFileWriteRequest,
+  WorkspaceSearchRequest,
+  WorkspaceSearchResponse
 } from "@nadovibe/api-contract";
 import {
-  CoreControlPlane,
   RUN_TRANSITIONS,
   type AgentTaskContract,
+  type AppendEventInput,
+  type CapacityReservation,
   type CoreCommandContext,
   type DomainEvent,
+  type IdentitySeedRecord,
+  type IdempotencyRecord,
+  type RunRecord,
   type RunState,
-  type SupervisorDecision
+  type SeedIdentityCommand,
+  type SupervisorDecision,
+  type CreateRunCommand
 } from "@nadovibe/core-kernel";
 import { buildOperationalAdminSnapshot, createBuildMetadata } from "@nadovibe/core-operations";
 import { rebuildPlatformReadModels } from "@nadovibe/domain";
 
+class CoreControlPlaneClient {
+  constructor(private readonly baseUrl: string) {}
+
+  async readAll(): Promise<readonly DomainEvent[]> {
+    return (await this.request<{ readonly events: readonly DomainEvent[] }>("GET", "/v1/core/events")).events;
+  }
+
+  async readAggregate(aggregateId: string): Promise<readonly DomainEvent[]> {
+    return (await this.request<{ readonly events: readonly DomainEvent[] }>("GET", `/v1/core/events/aggregate?aggregateId=${encodeURIComponent(aggregateId)}`)).events;
+  }
+
+  async append(input: AppendEventInput, expectedAggregateVersion?: number): Promise<DomainEvent> {
+    return (await this.request<{ readonly event: DomainEvent }>("POST", "/v1/core/events/append", { input, expectedAggregateVersion })).event;
+  }
+
+  async appendIfMissing(input: AppendEventInput): Promise<DomainEvent | undefined> {
+    return (await this.request<{ readonly event?: DomainEvent }>("POST", "/v1/core/events/append-if-missing", { input })).event;
+  }
+
+  async seedIdentity(command: SeedIdentityCommand, context: CoreCommandContext): Promise<IdentitySeedRecord> {
+    return (await this.request<{ readonly seed: IdentitySeedRecord }>("POST", "/v1/core/identity/seed", { command, context })).seed;
+  }
+
+  async createRun(command: CreateRunCommand, context: CoreCommandContext): Promise<RunRecord> {
+    return (await this.request<{ readonly run: RunRecord }>("POST", "/v1/core/runs/create", { command, context })).run;
+  }
+
+  async transitionRun(command: { readonly runId: string; readonly to: RunState }, context: CoreCommandContext): Promise<RunRecord> {
+    return (await this.request<{ readonly run: RunRecord }>("POST", "/v1/core/runs/transition", { command, context })).run;
+  }
+
+  async recordSupervisorDecision(decision: SupervisorDecision, context: CoreCommandContext): Promise<SupervisorDecision> {
+    return (await this.request<{ readonly decision: SupervisorDecision }>("POST", "/v1/core/supervisor/decision", { decision, context })).decision;
+  }
+
+  async completeRun(runId: string, supervisorDecisionId: string | undefined, context: CoreCommandContext): Promise<RunRecord> {
+    return (await this.request<{ readonly run: RunRecord }>("POST", "/v1/core/runs/complete", { runId, supervisorDecisionId, context })).run;
+  }
+
+  async startAgentWork(contract: AgentTaskContract, context: CoreCommandContext): Promise<void> {
+    await this.request("POST", "/v1/core/agents/start-work", { contract, context });
+  }
+
+  async getRun(runId: string): Promise<RunRecord | undefined> {
+    return (await this.request<{ readonly run?: RunRecord }>("GET", `/v1/core/runs/get?runId=${encodeURIComponent(runId)}`)).run;
+  }
+
+  async getIdentitySeed(tenantId: string, userId: string, workspaceId: string): Promise<IdentitySeedRecord | undefined> {
+    return (await this.request<{ readonly seed?: IdentitySeedRecord }>(
+      "GET",
+      `/v1/core/identity/get?tenantId=${encodeURIComponent(tenantId)}&userId=${encodeURIComponent(userId)}&workspaceId=${encodeURIComponent(workspaceId)}`
+    )).seed;
+  }
+
+  async activeReservations(): Promise<readonly CapacityReservation[]> {
+    return (await this.request<{ readonly reservations: readonly CapacityReservation[] }>("GET", "/v1/core/capacity/active")).reservations;
+  }
+
+  async getIdempotency<TResult>(key: string): Promise<IdempotencyRecord<TResult> | undefined> {
+    return (await this.request<{ readonly record?: IdempotencyRecord<TResult> }>("GET", `/v1/core/idempotency?key=${encodeURIComponent(key)}`)).record;
+  }
+
+  async putIdempotency<TResult>(record: Omit<IdempotencyRecord<TResult>, "createdAt"> & { readonly createdAt?: string }): Promise<IdempotencyRecord<TResult>> {
+    return (await this.request<{ readonly record: IdempotencyRecord<TResult> }>("POST", "/v1/core/idempotency", { record })).record;
+  }
+
+  private async request<TResponse>(method: string, pathToRequest: string, body?: unknown): Promise<TResponse> {
+    const init: RequestInit = {
+      method,
+      headers: { "content-type": "application/json" }
+    };
+    if (body !== undefined) {
+      init.body = JSON.stringify(body);
+    }
+    const response = await fetch(`${this.baseUrl}${pathToRequest}`, init);
+    const payload = (await response.json()) as TResponse | { readonly error?: string };
+    if (!response.ok) {
+      throw new Error(typeof (payload as { readonly error?: unknown }).error === "string" ? (payload as { readonly error: string }).error : "core request failed");
+    }
+    return payload as TResponse;
+  }
+}
+
+class WorkspaceRuntimeClient {
+  constructor(private readonly baseUrl: string) {}
+
+  async readFileTree(workspaceId: string, pathToRead: string): Promise<{ readonly workspaceId: string; readonly items: readonly FileTreeItem[] }> {
+    return this.request("GET", `/v1/workspace/files/tree?workspaceId=${encodeURIComponent(workspaceId)}&path=${encodeURIComponent(pathToRead)}`);
+  }
+
+  async readFile(workspaceId: string, pathToRead: string): Promise<WorkspaceFileReadResponse> {
+    return this.request("GET", `/v1/workspace/files/read?workspaceId=${encodeURIComponent(workspaceId)}&path=${encodeURIComponent(pathToRead)}`);
+  }
+
+  async search(request: WorkspaceSearchRequest): Promise<WorkspaceSearchResponse> {
+    return this.request(
+      "GET",
+      `/v1/workspace/search?workspaceId=${encodeURIComponent(request.workspaceId)}&query=${encodeURIComponent(request.query)}&path=${encodeURIComponent(request.path ?? "")}`
+    );
+  }
+
+  async writeFile(request: WorkspaceFileWriteRequest): Promise<{ readonly ok: boolean; readonly workspaceId: string; readonly path: string; readonly bytes: number }> {
+    return this.request("POST", "/v1/workspace/files/write", request);
+  }
+
+  private async request<TResponse>(method: string, pathToRequest: string, body?: unknown): Promise<TResponse> {
+    const init: RequestInit = {
+      method,
+      headers: { "content-type": "application/json" }
+    };
+    if (body !== undefined) {
+      init.body = JSON.stringify(body);
+    }
+    const response = await fetch(`${this.baseUrl}${pathToRequest}`, init);
+    const payload = (await response.json()) as TResponse | { readonly error?: string };
+    if (!response.ok) {
+      throw new Error(
+        typeof (payload as { readonly error?: unknown }).error === "string" ? (payload as { readonly error: string }).error : "workspace runtime request failed"
+      );
+    }
+    return payload as TResponse;
+  }
+}
+
 const port = Number.parseInt(process.env.GATEWAY_PORT ?? "8080", 10);
-const core = new CoreControlPlane();
 const buildMetadata = createBuildMetadata("gateway");
-const workspaceRoot = path.resolve(process.env.NADOVIBE_WORKSPACE_ROOT ?? process.cwd());
+const coreControlPlaneUrl = (process.env.CORE_CONTROL_PLANE_URL ?? "http://127.0.0.1:8081").replace(/\/$/, "");
+const workspaceRuntimeUrl = (process.env.WORKSPACE_RUNTIME_URL ?? "http://127.0.0.1:8093").replace(/\/$/, "");
+const core = new CoreControlPlaneClient(coreControlPlaneUrl);
+const workspaceRuntime = new WorkspaceRuntimeClient(workspaceRuntimeUrl);
 const defaultIdentity = {
   tenantId: "tenant_dev",
   userId: "user_dev",
@@ -74,7 +208,7 @@ const server = http.createServer(async (request, response) => {
       return;
     }
     if (request.url === "/healthz") {
-      sendJson(response, 200, { ok: true, service: "gateway", dependency: "core", requestId });
+      sendJson(response, 200, { ok: true, service: "gateway", requestId });
       return;
     }
     if (request.method === "GET" && request.url === "/version") {
@@ -82,126 +216,133 @@ const server = http.createServer(async (request, response) => {
       return;
     }
     if (request.url === "/readyz") {
-      sendJson(response, 200, { ok: true, service: "gateway", dependency: "core", eventCount: core.events.readAll().length, requestId });
+      const [coreReady, workspaceReady] = await Promise.all([readDependencyHealth(`${coreControlPlaneUrl}/readyz`), readDependencyHealth(`${workspaceRuntimeUrl}/readyz`)]);
+      const ok = coreReady.ok && workspaceReady.ok;
+      const eventCount = coreReady.ok ? (await core.readAll()).length : 0;
+      sendJson(response, ok ? 200 : 503, {
+        ok,
+        service: "gateway",
+        dependencies: ["core-control-plane", "workspace-runtime"],
+        core: coreReady,
+        workspaceRuntime: workspaceReady,
+        eventCount,
+        requestId
+      });
       return;
     }
     if (request.method === "GET" && request.url?.startsWith("/api/control-room")) {
       const url = new URL(request.url, "http://127.0.0.1");
       const role = url.searchParams.get("role") === "operator" ? "operator" : "user";
-      sendJson(response, 200, projection(role));
+      sendJson(response, 200, await projection(role));
       return;
     }
     if (request.method === "POST" && request.url === "/v1/dev/seed") {
       const body = parseDevIdentitySeedRequest(await readJson(request));
-      const seed = seedIdentity(body, requestId);
+      const seed = await seedIdentity(body, requestId);
       sendJson(response, 201, { seed });
       return;
     }
     if (request.method === "POST" && request.url === "/api/dev/seed") {
       const body = parseDevIdentitySeedRequest(await readJson(request));
-      const seed = seedIdentity(body, requestId);
+      const seed = await seedIdentity(body, requestId);
       sendJson(response, 201, { seed });
       return;
     }
     if (request.method === "POST" && request.url === "/v1/runs") {
       const body = parseCreateRunRequest(await readJson(request));
-      const run = createRun(body, requestId);
+      const run = await createRun(body, requestId);
       sendJson(response, 201, { run });
       return;
     }
     if (request.method === "POST" && request.url === "/api/runs") {
       const body = parseCreateRunRequest(await readJson(request));
-      const run = createRun(body, requestId);
-      const payload = { runId: run.id, status: mapInternalRunStateToUserStatus(run.state), requestId, projection: projection("user") };
+      const run = await createRun(body, requestId);
+      const payload = { runId: run.id, status: mapInternalRunStateToUserStatus(run.state), requestId, projection: await projection("user") };
       assertPublicResponseSafe(payload);
       sendJson(response, 202, payload);
       return;
     }
     if (request.method === "POST" && request.url === "/api/commands") {
       const body = parseEnqueueCommandRequest(await readJson(request));
-      sendJson(response, 202, enqueueCommand(body, requestId));
+      sendJson(response, 202, await enqueueCommand(body, requestId));
       return;
     }
     if (request.method === "POST" && request.url === "/api/approvals/decision") {
       const body = parseApprovalDecisionRequest(await readJson(request));
-      sendJson(response, 202, decideApproval(body, requestId));
+      sendJson(response, 202, await decideApproval(body, requestId));
       return;
     }
     if (request.method === "POST" && request.url === "/api/supervisor/control") {
       const body = parseSupervisorControlRequest(await readJson(request));
-      sendJson(response, 202, controlSupervisor(body, requestId));
+      sendJson(response, 202, await controlSupervisor(body, requestId));
       return;
     }
     if (request.method === "POST" && request.url === "/api/conflicts/escalate") {
       const body = parseConflictEscalationRequest(await readJson(request));
-      sendJson(response, 202, escalateConflict(body, requestId));
+      sendJson(response, 202, await escalateConflict(body, requestId));
       return;
     }
     if (request.method === "POST" && request.url === "/api/editor-session") {
       const body = parseEditorSessionRequest(await readJson(request));
-      sendJson(response, 202, changeEditorSession(body, requestId));
+      sendJson(response, 202, await changeEditorSession(body, requestId));
       return;
     }
     if (request.method === "POST" && request.url === "/api/final-review") {
       const body = parseFinalReviewDecisionRequest(await readJson(request));
-      sendJson(response, 202, decideFinalReview(body, requestId));
+      sendJson(response, 202, await decideFinalReview(body, requestId));
       return;
     }
     if (request.method === "GET" && request.url === "/api/projections") {
-      const projection = publicProjection(rebuildPlatformReadModels(core.events.readAll()));
+      const projection = publicProjection(rebuildPlatformReadModels(await core.readAll()));
       assertPublicResponseSafe(projection);
       sendJson(response, 200, projection);
       return;
     }
     if (request.method === "GET" && request.url === "/api/admin/capacity") {
-      const readModels = rebuildPlatformReadModels(core.events.readAll());
+      const readModels = rebuildPlatformReadModels(await core.readAll());
       sendJson(response, 200, { ...readModels.resources, queueDepth: 0 });
       return;
     }
     if (request.method === "GET" && request.url === "/api/admin/operations") {
       sendJson(response, 200, buildOperationalAdminSnapshot({
         services: ["core-control-plane", "app-server-adapter", "orchestrator", "workspace-runtime", "projection-worker", "gateway", "web"],
-        reservations: core.capacity.activeReservations(),
+        reservations: await core.activeReservations(),
         projectionLagEvents: 0,
         queueLagMs: 0
       }));
       return;
     }
     if (request.method === "GET" && request.url === "/api/mobile/review") {
-      sendJson(response, 200, mobileProjection());
+      sendJson(response, 200, await mobileProjection());
       return;
     }
     if (request.method === "POST" && request.url === "/api/mobile/push/register") {
       const body = parseMobilePushRegistrationRequest(await readJson(request));
-      sendJson(response, 202, registerMobilePush(body, requestId));
+      sendJson(response, 202, await registerMobilePush(body, requestId));
       return;
     }
     if (request.method === "POST" && request.url === "/api/mobile/notification-settings") {
       const body = parseNotificationSettingsRequest(await readJson(request));
-      sendJson(response, 202, updateNotificationSettings(body, requestId));
+      sendJson(response, 202, await updateNotificationSettings(body, requestId));
       return;
     }
     if (request.method === "POST" && request.url === "/api/mobile/notifications/read") {
       const body = parseNotificationReadRequest(await readJson(request));
-      sendJson(response, 202, markNotificationRead(body, requestId));
+      sendJson(response, 202, await markNotificationRead(body, requestId));
       return;
     }
     if (request.method === "GET" && request.url?.startsWith("/api/workspace/files/tree")) {
       const url = new URL(request.url, "http://127.0.0.1");
       const workspaceId = url.searchParams.get("workspaceId") ?? defaultIdentity.workspaceId;
       const requestedPath = url.searchParams.get("path") ?? "";
-      sendJson(response, 200, { workspaceId, items: readFileTree(requestedPath) });
+      sendJson(response, 200, await workspaceRuntime.readFileTree(workspaceId, requestedPath));
       return;
     }
     if (request.method === "GET" && request.url?.startsWith("/api/workspace/files/read")) {
       const url = new URL(request.url, "http://127.0.0.1");
       const requestedPath = url.searchParams.get("path") ?? "";
-      const absolute = safeWorkspacePath(requestedPath);
-      const stat = statSync(absolute);
-      if (!stat.isFile() || stat.size > 160_000) {
-        throw new Error("file is not readable through Gateway");
-      }
-      sendJson(response, 200, { path: requestedPath, content: readFileSync(absolute, "utf8") });
+      const workspaceId = url.searchParams.get("workspaceId") ?? defaultIdentity.workspaceId;
+      sendJson(response, 200, await workspaceRuntime.readFile(workspaceId, requestedPath));
       return;
     }
     if (request.method === "GET" && request.url?.startsWith("/api/workspace/search")) {
@@ -211,23 +352,19 @@ const server = http.createServer(async (request, response) => {
         query: url.searchParams.get("query") ?? "",
         path: url.searchParams.get("path") ?? ""
       });
-      sendJson(response, 200, searchWorkspace(body.workspaceId, body.query, body.path ?? ""));
+      sendJson(response, 200, await workspaceRuntime.search(body));
       return;
     }
     if (request.method === "POST" && request.url === "/api/workspace/files/write") {
       const body = parseWorkspaceFileWriteRequest(await readJson(request));
-      if (!body.fileLeaseId.startsWith("lease_")) {
-        throw new Error("active FileLease is required");
-      }
-      const absolute = safeWorkspacePath(body.path);
-      writeFileSync(absolute, body.content, "utf8");
-      appendEvent("file_write_" + sanitizeId(body.path), "WorkspaceFile", "WorkspaceFileWritten", {
+      await workspaceRuntime.writeFile(body);
+      await appendEvent("file_write_" + sanitizeId(body.path), "WorkspaceFile", "WorkspaceFileWritten", {
         workspaceId: body.workspaceId,
         path: body.path,
-        runId: latestRunId(),
+        runId: await latestRunId(),
         message: "파일 저장 완료"
       }, contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId));
-      appendEvent("diff_write_" + sanitizeId(body.path), "Diff", "DiffUpdated", {
+      await appendEvent("diff_write_" + sanitizeId(body.path), "Diff", "DiffUpdated", {
         path: body.path,
         additions: Math.max(1, body.content.split("\n").length),
         deletions: 0,
@@ -241,18 +378,18 @@ const server = http.createServer(async (request, response) => {
           }
         ]
       } satisfies DiffFileItem, contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId));
-      sendJson(response, 202, projection("user"));
+      sendJson(response, 202, await projection("user"));
       return;
     }
     if (request.method === "POST" && request.url === "/api/diff/hunks/decision") {
       const body = parseHunkDecisionRequest(await readJson(request));
-      sendJson(response, 202, decideHunk(body, requestId));
+      sendJson(response, 202, await decideHunk(body, requestId));
       return;
     }
     if (request.method === "GET" && request.url?.startsWith("/api/stream")) {
       const url = new URL(request.url, "http://127.0.0.1");
       const after = Number.parseInt(url.searchParams.get("after") ?? "0", 10);
-      const frames = replayStreamFromOffset(core.events.readAll(), Number.isFinite(after) ? after : 0);
+      const frames = replayStreamFromOffset(await core.readAll(), Number.isFinite(after) ? after : 0);
       response.writeHead(200, {
         "content-type": "text/event-stream; charset=utf-8",
         "cache-control": "no-cache",
@@ -292,17 +429,17 @@ function contextFromSeed(tenantId: string, userId: string, requestId: string): C
   };
 }
 
-function seedIdentity(body: DevIdentitySeedRequest, requestId: string) {
+async function seedIdentity(body: DevIdentitySeedRequest, requestId: string) {
   const context = contextFromSeed(body.tenantId, body.userId, requestId);
-  const seed = core.seedIdentity({ ...body, idempotencyKey: `seed:${body.tenantId}:${body.userId}:${body.workspaceId}`, membershipRole: "owner" }, context);
-  appendIfMissing(body.workspaceId, "Workspace", "WorkspaceCatalogSeeded", {
+  const seed = await core.seedIdentity({ ...body, idempotencyKey: `seed:${body.tenantId}:${body.userId}:${body.workspaceId}`, membershipRole: "owner" }, context);
+  await appendIfMissing(body.workspaceId, "Workspace", "WorkspaceCatalogSeeded", {
     workspaceId: body.workspaceId,
     workspaceName: "NadoVibe Platform",
     repositoryId: body.repositoryId,
     repositoryName: "NadoVibe",
     branch: "main"
   }, context);
-  appendIfMissing(`workspace_status_${body.workspaceId}`, "WorkspaceRuntime", "WorkspaceRuntimeStateChanged", {
+  await appendIfMissing(`workspace_status_${body.workspaceId}`, "WorkspaceRuntime", "WorkspaceRuntimeStateChanged", {
     workspaceId: body.workspaceId,
     to: "ready"
   }, context);
@@ -310,21 +447,21 @@ function seedIdentity(body: DevIdentitySeedRequest, requestId: string) {
   return seed;
 }
 
-function createRun(body: CreateRunRequest, requestId: string) {
+async function createRun(body: CreateRunRequest, requestId: string) {
   const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
-  ensureDefaultSeed(requestId);
-  const run = core.createRun(body, context);
-  appendEvent(`run_objective_${run.id}`, "RunProjection", "RunObjectiveUpdated", {
+  await ensureDefaultSeed(requestId);
+  const run = await core.createRun(body, context);
+  await appendEvent(`run_objective_${run.id}`, "RunProjection", "RunObjectiveUpdated", {
     runId: run.id,
     objective: body.objective ?? "새 멀티에이전트 작업"
   }, context);
-  transitionRunPath(run.id, ["queued", "planning", "planned", "assigning", "preparing_workspace", "binding_app_server", "running"], context);
-  seedAgentControlSurface(run.id, body.workspaceId, body.repositoryId ?? defaultIdentity.repositoryId, body.objective ?? "새 멀티에이전트 작업", context);
-  return core.getRun(run.id) ?? run;
+  await transitionRunPath(run.id, ["queued", "planning", "planned", "assigning", "preparing_workspace", "binding_app_server", "running"], context);
+  await seedAgentControlSurface(run.id, body.workspaceId, body.repositoryId ?? defaultIdentity.repositoryId, body.objective ?? "새 멀티에이전트 작업", context);
+  return (await core.getRun(run.id)) ?? run;
 }
 
-function enqueueCommand(body: EnqueueCommandRequest, requestId: string): ControlRoomProjectionResponse {
-  return withIdempotency(body.idempotencyKey, "enqueueCommand", `${body.runId}:${body.instruction}`, () => {
+async function enqueueCommand(body: EnqueueCommandRequest, requestId: string): Promise<ControlRoomProjectionResponse> {
+  return withIdempotency(body.idempotencyKey, "enqueueCommand", `${body.runId}:${body.instruction}`, async () => {
     const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
     const commandId = `cmd_${Date.now()}_${sanitizeId(body.runId)}`;
     const resourceClass = mapCommandIntentToResourceClass(body.resourceIntent);
@@ -339,15 +476,15 @@ function enqueueCommand(body: EnqueueCommandRequest, requestId: string): Control
     if (body.selection) {
       (item as { selection: NonNullable<EnqueueCommandRequest["selection"]> }).selection = body.selection;
     }
-    appendEvent(commandId, "Command", "CommandQueued", item, context);
-    appendEvent(`terminal_${commandId}`, "Artifact", "TerminalOutputAppended", {
+    await appendEvent(commandId, "Command", "CommandQueued", item, context);
+    await appendEvent(`terminal_${commandId}`, "Artifact", "TerminalOutputAppended", {
       lineId: `line_${commandId}_1`,
       runId: body.runId,
       stream: "system",
       text: body.selection ? `${body.selection.path}:${body.selection.fromLine}-${body.selection.toLine} 선택 범위 명령이 접수되었습니다.` : `${body.instruction} 명령이 접수되었습니다.`
     }, context);
     if (body.resourceIntent === "test") {
-      appendEvent(`artifact_${commandId}`, "Artifact", "ArtifactCreated", {
+      await appendEvent(`artifact_${commandId}`, "Artifact", "ArtifactCreated", {
         artifactId: `artifact_${commandId}`,
         runId: body.runId,
         label: "테스트 실행 기록",
@@ -359,30 +496,30 @@ function enqueueCommand(body: EnqueueCommandRequest, requestId: string): Control
   });
 }
 
-function decideApproval(body: ApprovalDecisionRequest, requestId: string): ControlRoomProjectionResponse {
-  return withIdempotency(body.idempotencyKey, "decideApproval", `${body.approvalId}:${body.decision}`, () => {
+async function decideApproval(body: ApprovalDecisionRequest, requestId: string): Promise<ControlRoomProjectionResponse> {
+  return withIdempotency(body.idempotencyKey, "decideApproval", `${body.approvalId}:${body.decision}`, async () => {
     const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
-    appendEvent(body.approvalId, "ApprovalRequest", "ApprovalDecided", {
+    await appendEvent(body.approvalId, "ApprovalRequest", "ApprovalDecided", {
       approvalId: body.approvalId,
       decision: body.decision,
       reason: body.reason,
-      runId: latestRunId()
+      runId: await latestRunId()
     }, context);
-    const runId = latestRunId();
+    const runId = await latestRunId();
     if (runId && body.decision === "approve") {
-      const run = core.getRun(runId);
+      const run = await core.getRun(runId);
       if (run?.state === "waiting_for_approval") {
-        core.transitionRun({ runId, to: "running" }, context);
+        await core.transitionRun({ runId, to: "running" }, context);
       }
     }
     return projection("user");
   });
 }
 
-function controlSupervisor(body: SupervisorControlRequest, requestId: string): ControlRoomProjectionResponse {
-  return withIdempotency(body.idempotencyKey, "controlSupervisor", `${body.runId}:${body.action}:${body.reason}`, () => {
+async function controlSupervisor(body: SupervisorControlRequest, requestId: string): Promise<ControlRoomProjectionResponse> {
+  return withIdempotency(body.idempotencyKey, "controlSupervisor", `${body.runId}:${body.action}:${body.reason}`, async () => {
     const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
-    const run = core.getRun(body.runId);
+    const run = await core.getRun(body.runId);
     const observed = run ? run.state : "unknown";
     const decision: SupervisorDecision = {
       id: `decision_${Date.now()}_${body.action}`,
@@ -394,20 +531,20 @@ function controlSupervisor(body: SupervisorControlRequest, requestId: string): C
       expectedVerification: ["timeline update", "lease state consistent"]
     };
     if (run) {
-      core.recordSupervisorDecision(decision, context);
-      applySupervisorStateTransition(body.runId, body.action, context);
+      await core.recordSupervisorDecision(decision, context);
+      await applySupervisorStateTransition(body.runId, body.action, context);
     }
     if (body.action === "retry") {
-      const recovery = projection("operator").recoveryQueue.find((item) => item.runId === body.runId && item.state !== "resolved");
+      const recovery = (await projection("operator")).recoveryQueue.find((item) => item.runId === body.runId && item.state !== "resolved");
       if (recovery) {
-        appendEvent(recovery.recoveryId, "Recovery", "RecoveryUpdated", {
+        await appendEvent(recovery.recoveryId, "Recovery", "RecoveryUpdated", {
           ...recovery,
           state: "resolved",
           nextAction: "재시도 요청 완료"
         }, context);
       }
     }
-    appendEvent(`supervisor_action_${decision.id}`, "SupervisorDecision", "SupervisorControlActionRecorded", {
+    await appendEvent(`supervisor_action_${decision.id}`, "SupervisorDecision", "SupervisorControlActionRecorded", {
       runId: body.runId,
       action: body.action,
       targetAgentId: body.targetAgentId ?? "run",
@@ -417,12 +554,12 @@ function controlSupervisor(body: SupervisorControlRequest, requestId: string): C
   });
 }
 
-function escalateConflict(body: ConflictEscalationRequest, requestId: string): ControlRoomProjectionResponse {
-  return withIdempotency(body.idempotencyKey, "escalateConflict", `${body.conflictId}:${body.reason}`, () => {
+async function escalateConflict(body: ConflictEscalationRequest, requestId: string): Promise<ControlRoomProjectionResponse> {
+  return withIdempotency(body.idempotencyKey, "escalateConflict", `${body.conflictId}:${body.reason}`, async () => {
     const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
-    appendEvent(body.conflictId, "Conflict", "ConflictEscalated", {
+    await appendEvent(body.conflictId, "Conflict", "ConflictEscalated", {
       conflictId: body.conflictId,
-      runId: latestRunId() ?? "run_unknown",
+      runId: (await latestRunId()) ?? "run_unknown",
       files: ["apps/web/src/server.ts"],
       summary: body.reason,
       state: "escalated"
@@ -431,8 +568,8 @@ function escalateConflict(body: ConflictEscalationRequest, requestId: string): C
   });
 }
 
-function changeEditorSession(body: EditorSessionRequest, requestId: string): ControlRoomProjectionResponse {
-  return withIdempotency(body.idempotencyKey, "changeEditorSession", `${body.workspaceId}:${body.action}`, () => {
+async function changeEditorSession(body: EditorSessionRequest, requestId: string): Promise<ControlRoomProjectionResponse> {
+  return withIdempotency(body.idempotencyKey, "changeEditorSession", `${body.workspaceId}:${body.action}`, async () => {
     const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
     const payload: EditorSessionProjection =
       body.action === "revoke"
@@ -448,15 +585,15 @@ function changeEditorSession(body: EditorSessionRequest, requestId: string): Con
             expiresAt: Date.now() + 30 * 60_000,
             message: "사용자 워크스페이스 전용 code-server 세션이 준비되었습니다."
           };
-    appendEvent(`editor_${body.workspaceId}`, "WorkspaceEditorSession", "EditorSessionChanged", payload, context);
+    await appendEvent(`editor_${body.workspaceId}`, "WorkspaceEditorSession", "EditorSessionChanged", payload, context);
     return projection("user");
   });
 }
 
-function decideFinalReview(body: FinalReviewDecisionRequest, requestId: string): ControlRoomProjectionResponse {
-  return withIdempotency(body.idempotencyKey, "decideFinalReview", `${body.runId}:${body.decision}`, () => {
+async function decideFinalReview(body: FinalReviewDecisionRequest, requestId: string): Promise<ControlRoomProjectionResponse> {
+  return withIdempotency(body.idempotencyKey, "decideFinalReview", `${body.runId}:${body.decision}`, async () => {
     const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
-    appendEvent(`final_review_${body.runId}`, "FinalReview", "FinalReviewGateChanged", {
+    await appendEvent(`final_review_${body.runId}`, "FinalReview", "FinalReviewGateChanged", {
       runId: body.runId,
       state: body.decision === "approve" ? "approved" : "changes_requested",
       checklist: [
@@ -465,20 +602,20 @@ function decideFinalReview(body: FinalReviewDecisionRequest, requestId: string):
         { label: "승인 정리", done: true }
       ]
     }, context);
-    const run = core.getRun(body.runId);
+    const run = await core.getRun(body.runId);
     if (body.decision === "approve" && run?.state === "ready_for_review") {
-      core.transitionRun({ runId: body.runId, to: "integrating" }, context);
-      const refreshed = core.getRun(body.runId);
-      core.completeRun(body.runId, refreshed?.supervisorDecisionId, context);
+      await core.transitionRun({ runId: body.runId, to: "integrating" }, context);
+      const refreshed = await core.getRun(body.runId);
+      await core.completeRun(body.runId, refreshed?.supervisorDecisionId, context);
     }
     return projection("user");
   });
 }
 
-function decideHunk(body: HunkDecisionRequest, requestId: string): ControlRoomProjectionResponse {
-  return withIdempotency(body.idempotencyKey, "decideHunk", `${body.path}:${body.hunkId}:${body.decision}`, () => {
+async function decideHunk(body: HunkDecisionRequest, requestId: string): Promise<ControlRoomProjectionResponse> {
+  return withIdempotency(body.idempotencyKey, "decideHunk", `${body.path}:${body.hunkId}:${body.decision}`, async () => {
     const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
-    const current = projection("operator").diff.find((file) => file.path === body.path);
+    const current = (await projection("operator")).diff.find((file) => file.path === body.path);
     const updated: DiffFileItem = {
       path: body.path,
       additions: current?.additions ?? 0,
@@ -487,24 +624,24 @@ function decideHunk(body: HunkDecisionRequest, requestId: string): ControlRoomPr
         hunk.hunkId === body.hunkId ? { ...hunk, state: body.decision === "approve" ? "approved" : "changes_requested" } : hunk
       )
     };
-    appendEvent(`diff_${sanitizeId(body.path)}`, "Diff", "DiffUpdated", updated, context);
+    await appendEvent(`diff_${sanitizeId(body.path)}`, "Diff", "DiffUpdated", updated, context);
     const approvalId = `approval_hunk_${sanitizeId(body.hunkId)}`;
-    appendEvent(approvalId, "ApprovalRequest", "ApprovalRequested", {
+    await appendEvent(approvalId, "ApprovalRequest", "ApprovalRequested", {
       approvalId,
-      runId: latestRunId(),
+      runId: await latestRunId(),
       reason: `Hunk ${body.hunkId} 검토`,
       state: "requested",
       destructive: false
     }, context);
-    appendEvent(approvalId, "ApprovalRequest", "ApprovalDecided", {
+    await appendEvent(approvalId, "ApprovalRequest", "ApprovalDecided", {
       approvalId,
       decision: body.decision === "approve" ? "approve" : "reject",
       reason: body.reason,
-      runId: latestRunId()
+      runId: await latestRunId()
     }, context);
-    appendEvent(`terminal_hunk_${sanitizeId(body.hunkId)}`, "Artifact", "TerminalOutputAppended", {
+    await appendEvent(`terminal_hunk_${sanitizeId(body.hunkId)}`, "Artifact", "TerminalOutputAppended", {
       lineId: `line_hunk_${Date.now()}`,
-      runId: latestRunId() ?? "run_unknown",
+      runId: (await latestRunId()) ?? "run_unknown",
       stream: "system",
       text: `Hunk ${body.hunkId} ${body.decision === "approve" ? "승인" : "변경 요청"} 처리되었습니다.`
     }, context);
@@ -512,17 +649,17 @@ function decideHunk(body: HunkDecisionRequest, requestId: string): ControlRoomPr
   });
 }
 
-function registerMobilePush(body: MobilePushRegistrationRequest, requestId: string) {
-  return withIdempotency(body.idempotencyKey, "registerMobilePush", `${body.workspaceId}:${body.permission}:${body.routeOnClick}`, () => {
+async function registerMobilePush(body: MobilePushRegistrationRequest, requestId: string) {
+  return withIdempotency(body.idempotencyKey, "registerMobilePush", `${body.workspaceId}:${body.permission}:${body.routeOnClick}`, async () => {
     const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
-    appendEvent(`mobile_push_${body.workspaceId}`, "MobileNotification", "MobilePushRegistrationChanged", {
+    await appendEvent(`mobile_push_${body.workspaceId}`, "MobileNotification", "MobilePushRegistrationChanged", {
       workspaceId: body.workspaceId,
       permission: body.permission,
       registered: body.permission === "granted" || body.permission === "default",
       endpointLabel: summarizeEndpoint(body.endpoint),
       routeOnClick: body.routeOnClick
     }, context);
-    appendEvent(`notification_mobile_push_${body.workspaceId}`, "Notification", "NotificationRaised", {
+    await appendEvent(`notification_mobile_push_${body.workspaceId}`, "Notification", "NotificationRaised", {
       notificationId: `notification_mobile_push_${sanitizeId(body.workspaceId)}`,
       title: "모바일 알림 경로 준비",
       body: "필요한 승인과 복구 알림이 모바일 inbox로 연결됩니다.",
@@ -533,11 +670,11 @@ function registerMobilePush(body: MobilePushRegistrationRequest, requestId: stri
   });
 }
 
-function updateNotificationSettings(body: NotificationSettingsRequest, requestId: string) {
-  return withIdempotency(body.idempotencyKey, "updateNotificationSettings", `${body.workspaceId}:${body.enabled}:${body.approvals}:${body.recovery}:${body.finalReview}`, () => {
+async function updateNotificationSettings(body: NotificationSettingsRequest, requestId: string) {
+  return withIdempotency(body.idempotencyKey, "updateNotificationSettings", `${body.workspaceId}:${body.enabled}:${body.approvals}:${body.recovery}:${body.finalReview}`, async () => {
     const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
-    appendEvent(`mobile_settings_${body.workspaceId}`, "MobileNotification", "NotificationSettingsUpdated", body, context);
-    appendEvent(`notification_mobile_settings_${body.workspaceId}`, "Notification", "NotificationRaised", {
+    await appendEvent(`mobile_settings_${body.workspaceId}`, "MobileNotification", "NotificationSettingsUpdated", body, context);
+    await appendEvent(`notification_mobile_settings_${body.workspaceId}`, "Notification", "NotificationRaised", {
       notificationId: `notification_mobile_settings_${sanitizeId(body.workspaceId)}`,
       title: "알림 설정 저장",
       body: "사용자 결정이 필요한 항목만 모바일 inbox에 표시합니다.",
@@ -548,27 +685,27 @@ function updateNotificationSettings(body: NotificationSettingsRequest, requestId
   });
 }
 
-function markNotificationRead(body: NotificationReadRequest, requestId: string) {
-  return withIdempotency(body.idempotencyKey, "markNotificationRead", body.notificationId, () => {
+async function markNotificationRead(body: NotificationReadRequest, requestId: string) {
+  return withIdempotency(body.idempotencyKey, "markNotificationRead", body.notificationId, async () => {
     const context = contextFromSeed(defaultIdentity.tenantId, defaultIdentity.userId, requestId);
-    appendEvent(body.notificationId, "Notification", "NotificationRead", {
+    await appendEvent(body.notificationId, "Notification", "NotificationRead", {
       notificationId: body.notificationId
     }, context);
     return mobileProjection();
   });
 }
 
-function seedAgentControlSurface(runId: string, workspaceId: string, repositoryId: string, objective: string, context: CoreCommandContext): void {
+async function seedAgentControlSurface(runId: string, workspaceId: string, repositoryId: string, objective: string, context: CoreCommandContext): Promise<void> {
   const supervisorAgentId = `agent_supervisor_${sanitizeId(runId)}`;
   const taskAgentId = `agent_task_${sanitizeId(runId)}`;
-  appendEvent(`${runId}_supervisor_hierarchy`, "Agent", "AgentHierarchyRecorded", {
+  await appendEvent(`${runId}_supervisor_hierarchy`, "Agent", "AgentHierarchyRecorded", {
     agentId: supervisorAgentId,
     runId,
     role: "SupervisorAgent",
     label: "SupervisorAgent",
     state: "observing"
   }, context);
-  appendEvent(`${runId}_task_hierarchy`, "Agent", "AgentHierarchyRecorded", {
+  await appendEvent(`${runId}_task_hierarchy`, "Agent", "AgentHierarchyRecorded", {
     agentId: taskAgentId,
     parentAgentId: supervisorAgentId,
     runId,
@@ -582,8 +719,8 @@ function seedAgentControlSurface(runId: string, workspaceId: string, repositoryI
     makeContract("verifier", runId, taskAgentId, workspaceId, repositoryId, "테스트와 UI 검증 수행", ["packages/core-kernel/test", "reports"], [".env", "node_modules"])
   ];
   for (const contract of contracts) {
-    core.startAgentWork(contract, context);
-    appendEvent(`${runId}_${contract.id}_hierarchy`, "Agent", "AgentHierarchyRecorded", {
+    await core.startAgentWork(contract, context);
+    await appendEvent(`${runId}_${contract.id}_hierarchy`, "Agent", "AgentHierarchyRecorded", {
       agentId: `agent_${contract.id}`,
       parentAgentId: taskAgentId,
       runId,
@@ -591,7 +728,7 @@ function seedAgentControlSurface(runId: string, workspaceId: string, repositoryI
       label: contract.objective,
       state: "working"
     }, context);
-    appendEvent(`${runId}_${contract.id}_lease`, "AgentLease", "AgentLeaseBudgetUpdated", {
+    await appendEvent(`${runId}_${contract.id}_lease`, "AgentLease", "AgentLeaseBudgetUpdated", {
       agentId: `agent_${contract.id}`,
       heartbeat: "fresh",
       timeoutLabel: "12분 남음",
@@ -599,56 +736,56 @@ function seedAgentControlSurface(runId: string, workspaceId: string, repositoryI
       commandBudget: `${contract.commandBudget}개`
     }, context);
   }
-  appendEvent(`command_initial_${runId}`, "Command", "CommandQueued", {
+  await appendEvent(`command_initial_${runId}`, "Command", "CommandQueued", {
     commandId: `cmd_initial_${sanitizeId(runId)}`,
     runId,
     instruction: "워크스페이스 분석과 구현 계획을 시작합니다.",
     state: "ready",
     resourceIntent: "light"
   }, context);
-  appendEvent(`approval_${runId}_scope`, "ApprovalRequest", "ApprovalRequested", {
+  await appendEvent(`approval_${runId}_scope`, "ApprovalRequest", "ApprovalRequested", {
     approvalId: `approval_${sanitizeId(runId)}_scope`,
     runId,
     reason: "작업 범위 확장 또는 destructive 변경이 필요하면 여기서 승인합니다.",
     state: "requested",
     destructive: false
   }, context);
-  appendEvent(`notification_${runId}_approval`, "Notification", "NotificationRaised", {
+  await appendEvent(`notification_${runId}_approval`, "Notification", "NotificationRaised", {
     notificationId: `notification_${sanitizeId(runId)}_approval`,
     title: "승인 검토 필요",
     body: "작업 범위 변경 요청을 모바일에서 검토할 수 있습니다.",
     route: `/mobile#approval-${sanitizeId(`approval_${sanitizeId(runId)}_scope`)}`,
     unread: true
   }, context);
-  appendEvent(`conflict_${runId}_initial`, "Conflict", "ConflictDetected", {
+  await appendEvent(`conflict_${runId}_initial`, "Conflict", "ConflictDetected", {
     conflictId: `conflict_${sanitizeId(runId)}_initial`,
     runId,
     files: ["apps/web/src/server.ts"],
     summary: "UI shell 교체 중 hunk 단위 검토가 필요합니다.",
     state: "detected"
   }, context);
-  appendEvent(`notification_${runId}_conflict`, "Notification", "NotificationRaised", {
+  await appendEvent(`notification_${runId}_conflict`, "Notification", "NotificationRaised", {
     notificationId: `notification_${sanitizeId(runId)}_conflict`,
     title: "충돌 검토",
     body: "파일 충돌 요약을 확인하고 escalation 여부를 결정하십시오.",
     route: `/mobile#conflict-${sanitizeId(`conflict_${sanitizeId(runId)}_initial`)}`,
     unread: true
   }, context);
-  appendEvent(`recovery_${runId}_editor`, "Recovery", "RecoveryQueued", {
+  await appendEvent(`recovery_${runId}_editor`, "Recovery", "RecoveryQueued", {
     recoveryId: `recovery_${sanitizeId(runId)}_editor`,
     runId,
     title: "IDE 세션 재발급 준비",
     state: "ready_to_retry",
     nextAction: "세션 재발급"
   }, context);
-  appendEvent(`notification_${runId}_recovery`, "Notification", "NotificationRaised", {
+  await appendEvent(`notification_${runId}_recovery`, "Notification", "NotificationRaised", {
     notificationId: `notification_${sanitizeId(runId)}_recovery`,
     title: "복구 결정 준비",
     body: "워크스페이스 복구 action을 모바일에서 재시도할 수 있습니다.",
     route: `/mobile#recovery-${sanitizeId(`recovery_${sanitizeId(runId)}_editor`)}`,
     unread: true
   }, context);
-  appendEvent(`diff_${runId}_web`, "Diff", "DiffUpdated", {
+  await appendEvent(`diff_${runId}_web`, "Diff", "DiffUpdated", {
     path: "apps/web/src/server.ts",
     additions: 180,
     deletions: 24,
@@ -657,7 +794,7 @@ function seedAgentControlSurface(runId: string, workspaceId: string, repositoryI
       { hunkId: `hunk_${sanitizeId(runId)}_stream`, title: "Realtime reconnect client", additions: 84, deletions: 12, state: "pending" }
     ]
   } satisfies DiffFileItem, context);
-  appendEvent(`final_review_${runId}`, "FinalReview", "FinalReviewGateChanged", {
+  await appendEvent(`final_review_${runId}`, "FinalReview", "FinalReviewGateChanged", {
     runId,
     state: "not_ready",
     checklist: [
@@ -666,7 +803,7 @@ function seedAgentControlSurface(runId: string, workspaceId: string, repositoryI
       { label: "승인 정리", done: false }
     ]
   }, context);
-  core.recordSupervisorDecision(
+  await core.recordSupervisorDecision(
     {
       id: `decision_${sanitizeId(runId)}_start`,
       runId,
@@ -723,18 +860,18 @@ function makeContract(
   };
 }
 
-function transitionRunPath(runId: string, pathToApply: readonly RunState[], context: CoreCommandContext): void {
+async function transitionRunPath(runId: string, pathToApply: readonly RunState[], context: CoreCommandContext): Promise<void> {
   for (const next of pathToApply) {
-    const run = core.getRun(runId);
+    const run = await core.getRun(runId);
     if (!run || !RUN_TRANSITIONS[run.state].includes(next)) {
       continue;
     }
-    core.transitionRun({ runId, to: next }, context);
+    await core.transitionRun({ runId, to: next }, context);
   }
 }
 
-function applySupervisorStateTransition(runId: string, action: SupervisorControlRequest["action"], context: CoreCommandContext): void {
-  const run = core.getRun(runId);
+async function applySupervisorStateTransition(runId: string, action: SupervisorControlRequest["action"], context: CoreCommandContext): Promise<void> {
+  const run = await core.getRun(runId);
   if (!run) return;
   const nextByAction: Partial<Record<SupervisorControlRequest["action"], RunState>> = {
     pause: "waiting_for_input",
@@ -746,119 +883,45 @@ function applySupervisorStateTransition(runId: string, action: SupervisorControl
   };
   const next = nextByAction[action];
   if (next && RUN_TRANSITIONS[run.state].includes(next)) {
-    core.transitionRun({ runId, to: next }, context);
+    await core.transitionRun({ runId, to: next }, context);
   }
 }
 
-function projection(role: "user" | "operator"): ControlRoomProjectionResponse {
-  return rebuildControlRoomProjection(core.events.readAll(), { role, fileTree: readFileTree("") });
+async function projection(role: "user" | "operator"): Promise<ControlRoomProjectionResponse> {
+  const fileTree = (await workspaceRuntime.readFileTree(defaultIdentity.workspaceId, "")).items;
+  return rebuildControlRoomProjection(await core.readAll(), { role, fileTree });
 }
 
-function mobileProjection() {
-  return rebuildMobileCommandReviewProjection(core.events.readAll());
+async function mobileProjection() {
+  return rebuildMobileCommandReviewProjection(await core.readAll());
 }
 
-function ensureDefaultSeed(requestId: string): void {
-  if (!core.getIdentitySeed(defaultIdentity.tenantId, defaultIdentity.userId, defaultIdentity.workspaceId)) {
-    seedIdentity(defaultIdentity, requestId);
+async function ensureDefaultSeed(requestId: string): Promise<void> {
+  if (!(await core.getIdentitySeed(defaultIdentity.tenantId, defaultIdentity.userId, defaultIdentity.workspaceId))) {
+    await seedIdentity(defaultIdentity, requestId);
   }
 }
 
-function latestRunId(): string | undefined {
-  return [...core.events.readAll()].reverse().find((event) => event.aggregateType === "Run")?.aggregateId;
+async function latestRunId(): Promise<string | undefined> {
+  return [...(await core.readAll())].reverse().find((event) => event.aggregateType === "Run")?.aggregateId;
 }
 
-function appendIfMissing<TPayload>(aggregateId: string, aggregateType: string, type: string, payload: TPayload, context: CoreCommandContext): DomainEvent<TPayload> | undefined {
-  if (core.events.readAggregate(aggregateId).some((event) => event.type === type)) {
-    return undefined;
-  }
-  return appendEvent(aggregateId, aggregateType, type, payload, context);
+async function appendIfMissing<TPayload>(aggregateId: string, aggregateType: string, type: string, payload: TPayload, context: CoreCommandContext): Promise<DomainEvent<TPayload> | undefined> {
+  return core.appendIfMissing({ aggregateId, aggregateType, type, schemaVersion: 1, payload, metadata: context }) as Promise<DomainEvent<TPayload> | undefined>;
 }
 
-function appendEvent<TPayload>(aggregateId: string, aggregateType: string, type: string, payload: TPayload, context: CoreCommandContext): DomainEvent<TPayload> {
-  const expected = core.events.readAggregate(aggregateId).at(-1)?.aggregateVersion ?? 0;
-  return core.events.append({ aggregateId, aggregateType, type, schemaVersion: 1, payload, metadata: context }, expected);
+async function appendEvent<TPayload>(aggregateId: string, aggregateType: string, type: string, payload: TPayload, context: CoreCommandContext): Promise<DomainEvent<TPayload>> {
+  return core.append({ aggregateId, aggregateType, type, schemaVersion: 1, payload, metadata: context }) as Promise<DomainEvent<TPayload>>;
 }
 
-function withIdempotency<TResult>(key: string, commandName: string, requestHash: string, execute: () => TResult): TResult {
-  const cached = core.idempotency.get<TResult>(key);
+async function withIdempotency<TResult>(key: string, commandName: string, requestHash: string, execute: () => Promise<TResult>): Promise<TResult> {
+  const cached = await core.getIdempotency<TResult>(key);
   if (cached) {
     return cached.result;
   }
-  const result = execute();
-  core.idempotency.put({ key, commandName, requestHash, result });
+  const result = await execute();
+  await core.putIdempotency({ key, commandName, requestHash, result });
   return result;
-}
-
-function readFileTree(requestedPath: string): readonly FileTreeItem[] {
-  const base = safeWorkspacePath(requestedPath);
-  const items: FileTreeItem[] = [];
-  walk(base, path.relative(workspaceRoot, base), 0, items);
-  return items.slice(0, 320);
-}
-
-function searchWorkspace(workspaceId: string, query: string, requestedPath: string) {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (normalizedQuery.length < 2) {
-    return { workspaceId, query, results: [] };
-  }
-  const base = safeWorkspacePath(requestedPath);
-  const results: Array<{ path: string; line: number; preview: string }> = [];
-  searchWalk(base, normalizedQuery, results);
-  return { workspaceId, query, results: results.slice(0, 40) };
-}
-
-function searchWalk(absolute: string, query: string, results: Array<{ path: string; line: number; preview: string }>, depth = 0): void {
-  if (depth > 4 || results.length >= 40) return;
-  const stat = statSync(absolute);
-  if (stat.isFile()) {
-    const relative = path.relative(workspaceRoot, absolute).replace(/\\/g, "/");
-    if (relative.toLowerCase().includes(query)) {
-      results.push({ path: relative, line: 1, preview: relative });
-    }
-    if (stat.size > 160_000 || !/\.(ts|tsx|js|jsx|json|md|css|html|yml|yaml|mjs|cjs)$/.test(relative)) return;
-    const lines = readFileSync(absolute, "utf8").split(/\r?\n/);
-    const hitIndex = lines.findIndex((line) => line.toLowerCase().includes(query));
-    if (hitIndex >= 0) {
-      results.push({ path: relative, line: hitIndex + 1, preview: lines[hitIndex]?.trim().slice(0, 160) ?? "" });
-    }
-    return;
-  }
-  if (!stat.isDirectory()) return;
-  const entries = readdirSync(absolute, { withFileTypes: true })
-    .filter((entry) => ![".git", "node_modules", "dist", "coverage", ".DS_Store", "test-results", "playwright-report"].includes(entry.name))
-    .sort((left, right) => Number(right.isDirectory()) - Number(left.isDirectory()) || left.name.localeCompare(right.name))
-    .slice(0, 120);
-  for (const entry of entries) {
-    searchWalk(path.join(absolute, entry.name), query, results, depth + 1);
-    if (results.length >= 40) return;
-  }
-}
-
-function walk(absolute: string, relativePath: string, depth: number, items: FileTreeItem[]): void {
-  if (depth > 2 || items.length >= 320) return;
-  const entries = readdirSync(absolute, { withFileTypes: true })
-    .filter((entry) => ![".git", "node_modules", "dist", "coverage", ".DS_Store"].includes(entry.name))
-    .sort((left, right) => Number(right.isDirectory()) - Number(left.isDirectory()) || left.name.localeCompare(right.name))
-    .slice(0, 80);
-  for (const entry of entries) {
-    const childAbsolute = path.join(absolute, entry.name);
-    const childRelative = path.join(relativePath, entry.name).replace(/\\/g, "/").replace(/^\.\//, "");
-    items.push({ path: childRelative, name: entry.name, type: entry.isDirectory() ? "directory" : "file", depth });
-    if (entry.isDirectory()) {
-      walk(childAbsolute, childRelative, depth + 1, items);
-    }
-  }
-}
-
-function safeWorkspacePath(requestedPath: string): string {
-  const relative = path.normalize(requestedPath || ".").replace(/^(\.\.(\/|\\|$))+/, "");
-  const absolute = path.resolve(workspaceRoot, relative);
-  const inside = absolute === workspaceRoot || absolute.startsWith(workspaceRoot + path.sep);
-  if (!inside) {
-    throw new Error("path is outside workspace");
-  }
-  return absolute;
 }
 
 function sanitizeId(value: string): string {
@@ -879,6 +942,19 @@ async function readJson(request: http.IncomingMessage): Promise<unknown> {
     return {};
   }
   return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
+}
+
+async function readDependencyHealth(url: string): Promise<{ readonly ok: boolean; readonly status?: number; readonly error?: string }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 1500);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    return { ok: response.ok, status: response.status };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "dependency_check_failed" };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function sendJson(response: http.ServerResponse, status: number, body: unknown): void {

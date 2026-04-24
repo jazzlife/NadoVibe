@@ -7,6 +7,10 @@ services:
     command: ["node", "services/workspace-runtime/dist/server.js"]
     environment:
       WORKSPACE_RUNTIME_PORT: ${WORKSPACE_RUNTIME_PORT:-8093}
+      WORKSPACE_RUNTIME_DOCKER_ENABLED: ${WORKSPACE_RUNTIME_DOCKER_ENABLED:-true}
+      DOCKER_SOCKET_PATH: ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}
+      WORKSPACE_RUNTIME_WORKSPACE_BASE_DIR: ${WORKSPACE_RUNTIME_WORKSPACE_BASE_DIR:-/var/lib/nadovibe/workspaces}
+      WORKSPACE_RUNTIME_FILE_LEASE_TTL_MS: ${WORKSPACE_RUNTIME_FILE_LEASE_TTL_MS:-600000}
       NADOVIBE_ENV_PROFILE: ${NADOVIBE_ENV_PROFILE:-local}
       NADOVIBE_IMAGE_TAG: ${NADOVIBE_IMAGE_TAG:-local}
       NADOVIBE_BUILD_VERSION: ${NADOVIBE_BUILD_VERSION:-0.1.0}
@@ -17,11 +21,12 @@ services:
     ports:
       - "${WORKSPACE_RUNTIME_PORT:-8093}:8093"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8093/healthz >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8093/readyz >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 10
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - nadovibe_repositories:/var/lib/nadovibe/repositories
       - nadovibe_workspaces:/var/lib/nadovibe/workspaces
       - nadovibe_artifacts:/var/lib/nadovibe/artifacts

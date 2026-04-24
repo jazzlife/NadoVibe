@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 import {
@@ -163,4 +163,20 @@ test("artifact metadata and sandbox Dockerfile are present without secret-bearin
   });
   assert.equal(artifact.uri.includes("token"), false);
   assert.equal(existsSync(resolve("infra/docker/sandbox.Dockerfile")), true);
+});
+
+test("workspace-runtime service exposes Docker sandbox lifecycle without raw browser routes", () => {
+  const source = readFileSync(resolve("services/workspace-runtime/src/server.ts"), "utf8");
+  const compose = readFileSync(resolve("infra/portainer/workspace-runtime-stack/docker-compose.yml"), "utf8");
+  assert.match(source, /\/v1\/workspace\/provision/);
+  assert.match(source, /\/v1\/workspace\/files\/read/);
+  assert.match(source, /\/v1\/workspace\/files\/write/);
+  assert.match(source, /issueFileLease/);
+  assert.match(source, /WORKSPACE_RUNTIME_SINGLE_WORKSPACE_ROOT|WORKSPACE_RUNTIME_WORKSPACE_BASE_DIR/);
+  assert.match(source, /dockerRequest/);
+  assert.match(source, /NanoCpus/);
+  assert.match(source, /PidsLimit/);
+  assert.match(compose, /WORKSPACE_RUNTIME_DOCKER_ENABLED/);
+  assert.match(compose, /\/var\/run\/docker\.sock/);
+  assert.doesNotMatch(source, /password|token/i);
 });

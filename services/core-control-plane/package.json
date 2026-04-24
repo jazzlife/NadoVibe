@@ -4,7 +4,8 @@
   "type": "module",
   "dependencies": {
     "@nadovibe/core-kernel": "0.1.0",
-    "@nadovibe/core-operations": "0.1.0"
+    "@nadovibe/core-operations": "0.1.0",
+    "pg": "^8.20.0"
   },
   "exports": {
     ".": {

@@ -24,6 +24,7 @@ services:
     command: ["node", "services/core-control-plane/dist/server.js"]
     environment:
       CORE_CONTROL_PLANE_PORT: 8081
+      DATABASE_URL: postgresql://nadovibe:nadovibe_dev@postgres:5432/nadovibe
       NADOVIBE_ENV_PROFILE: local
       NADOVIBE_IMAGE_TAG: local
       NADOVIBE_BUILD_VERSION: 0.1.0
@@ -41,7 +42,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8081/healthz >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8081/readyz >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -54,6 +55,8 @@ services:
     command: ["node", "apps/gateway/dist/server.js"]
     environment:
       GATEWAY_PORT: 8080
+      CORE_CONTROL_PLANE_URL: http://core-control-plane:8081
+      WORKSPACE_RUNTIME_URL: http://workspace-runtime:8093
       NADOVIBE_ENV_PROFILE: local
       NADOVIBE_IMAGE_TAG: local
       NADOVIBE_BUILD_VERSION: 0.1.0
@@ -68,8 +71,38 @@ services:
     depends_on:
       core-control-plane:
         condition: service_healthy
+      workspace-runtime:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/readyz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nadovibe_local_net
+
+  workspace-runtime:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "services/workspace-runtime/dist/server.js"]
+    environment:
+      WORKSPACE_RUNTIME_PORT: 8093
+      WORKSPACE_RUNTIME_DOCKER_ENABLED: "false"
+      WORKSPACE_RUNTIME_SINGLE_WORKSPACE_ROOT: /workspace
+      NADOVIBE_ENV_PROFILE: local
+      NADOVIBE_IMAGE_TAG: local
+      NADOVIBE_BUILD_VERSION: 0.1.0
+      NADOVIBE_GIT_SHA: local
+      NADOVIBE_EVENT_SCHEMA_VERSION: 1
+      NADOVIBE_MIGRATION_VERSION: 3
+      APP_SERVER_PROTOCOL_VERSION: official-docs-2026-04-23
+    ports:
+      - "8093:8093"
+    volumes:
+      - ../..:/app:ro
+      - ../..:/workspace:rw
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8093/readyz >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 10

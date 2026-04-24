@@ -50,7 +50,8 @@ test("tablet workbench shell includes required Phase 7 surfaces and offline guar
   assert.match(js, /codemirror-vendor\.js/);
   assert.match(js, /selection/);
   assert.match(js, /offline/);
-  assert.match(js, /fileLeaseId: 'lease_tablet_/);
+  assert.match(js, /fileLeaseId: state\.fileLeaseId/);
+  assert.doesNotMatch(js, /lease_tablet_/);
   assert.match(serviceWorker, /\/workbench/);
   assert.match(serviceWorker, /\/assets\/codemirror-vendor\.js/);
   assert.doesNotMatch(html + js, /container|password|token|waiting_for_capacity|backpressure|overload|queue position/i);

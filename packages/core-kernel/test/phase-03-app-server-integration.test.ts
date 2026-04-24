@@ -3,10 +3,13 @@ import test from "node:test";
 import {
   APP_SERVER_CLIENT_INFO,
   APP_SERVER_THREAD_SERVICE_NAME,
+  AppServerSchemaRegistry,
   ProtocolError,
   TypedAppServerClient,
   classifyAppServerMethod,
+  createDefaultAppServerCapabilityRegistry,
   createInitializeRequest,
+  createOfficialDocsSchemaArtifact,
   createRetrySchedule,
   createThreadStartRequest,
   normalizeAppServerNotification,
@@ -59,6 +62,30 @@ test("app-server side-effect methods remain classified for Core enforcement", ()
   assert.equal(classifyAppServerMethod("fs/readFile").action, "route");
   assert.equal(classifyAppServerMethod("plugin/install").action, "deny");
   assert.throws(() => classifyAppServerMethod("future/method"), ProtocolError);
+});
+
+test("app-server capability modules allow additive methods without changing Core", () => {
+  const capabilities = createDefaultAppServerCapabilityRegistry();
+  capabilities.registerModule({
+    id: "app-server.future-context",
+    title: "Future context read capability",
+    version: "2026-04-24",
+    methods: ["future/context/read"],
+    policies: [
+      {
+        method: "future/context/read",
+        family: "future_context",
+        action: "allow",
+        reason: "read-only future context capability is isolated behind the adapter registry"
+      }
+    ]
+  });
+  assert.equal(capabilities.classify("future/context/read").action, "allow");
+  assert.deepEqual(capabilities.validateCoverage(["initialize", "future/context/read"]), []);
+
+  const schema = new AppServerSchemaRegistry(capabilities);
+  schema.register({ ...createOfficialDocsSchemaArtifact("future-protocol"), methods: ["initialize", "future/context/read"] });
+  assert.equal(schema.methodPolicy("future/context/read").family, "future_context");
 });
 
 test("app-server notifications normalize into platform events", () => {

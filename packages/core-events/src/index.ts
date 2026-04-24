@@ -118,6 +118,21 @@ export class InMemoryEventJournal implements EventJournal {
   private readonly snapshotsByAggregate = new Map<string, EventSnapshot[]>();
   private nextSequence = 1;
 
+  constructor(input?: {
+    readonly events?: readonly DomainEvent[];
+    readonly snapshots?: readonly EventSnapshot[];
+  }) {
+    if (input?.events) {
+      this.events.push(...input.events);
+      this.nextSequence = Math.max(1, ...input.events.map((event) => parseEventSequence(event.id) + 1));
+    }
+    for (const snapshot of input?.snapshots ?? []) {
+      const snapshots = this.snapshotsByAggregate.get(snapshot.aggregateId) ?? [];
+      snapshots.push(snapshot);
+      this.snapshotsByAggregate.set(snapshot.aggregateId, snapshots);
+    }
+  }
+
   append<TPayload>(input: AppendEventInput<TPayload>, expectedAggregateVersion: number): DomainEvent<TPayload> {
     assertNoSecretPayload(input.payload);
     const currentVersion = this.readAggregate(input.aggregateId).at(-1)?.aggregateVersion ?? 0;
@@ -178,6 +193,12 @@ export interface IdempotencyRecord<TResult = unknown> {
 export class InMemoryIdempotencyStore {
   private readonly records = new Map<string, IdempotencyRecord>();
 
+  constructor(records: readonly IdempotencyRecord[] = []) {
+    for (const record of records) {
+      this.records.set(record.key, record);
+    }
+  }
+
   get<TResult>(key: string): IdempotencyRecord<TResult> | undefined {
     return this.records.get(key) as IdempotencyRecord<TResult> | undefined;
   }
@@ -190,6 +211,15 @@ export class InMemoryIdempotencyStore {
     this.records.set(record.key, stored);
     return stored;
   }
+
+  readAll(): readonly IdempotencyRecord[] {
+    return [...this.records.values()];
+  }
+}
+
+function parseEventSequence(eventId: string): number {
+  const match = /^evt_(\d+)$/.exec(eventId);
+  return match ? Number.parseInt(match[1] ?? "0", 10) : 0;
 }
 
 export interface PgQueryResult<TRow> {

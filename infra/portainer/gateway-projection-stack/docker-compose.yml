@@ -7,6 +7,8 @@ services:
     command: ["node", "apps/gateway/dist/server.js"]
     environment:
       GATEWAY_PORT: ${GATEWAY_PORT:-8080}
+      CORE_CONTROL_PLANE_URL: ${CORE_CONTROL_PLANE_URL:-http://core-control-plane:8081}
+      WORKSPACE_RUNTIME_URL: ${WORKSPACE_RUNTIME_URL:-http://workspace-runtime:8093}
       NADOVIBE_ENV_PROFILE: ${NADOVIBE_ENV_PROFILE:-local}
       NADOVIBE_IMAGE_TAG: ${NADOVIBE_IMAGE_TAG:-local}
       NADOVIBE_BUILD_VERSION: ${NADOVIBE_BUILD_VERSION:-0.1.0}
@@ -17,7 +19,7 @@ services:
     ports:
       - "${GATEWAY_PORT:-8080}:8080"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/readyz >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -32,6 +34,7 @@ services:
     command: ["node", "services/projection-worker/dist/server.js"]
     environment:
       PROJECTION_WORKER_PORT: ${PROJECTION_WORKER_PORT:-8094}
+      CORE_CONTROL_PLANE_URL: ${CORE_CONTROL_PLANE_URL:-http://core-control-plane:8081}
       NADOVIBE_ENV_PROFILE: ${NADOVIBE_ENV_PROFILE:-local}
       NADOVIBE_IMAGE_TAG: ${NADOVIBE_IMAGE_TAG:-local}
       NADOVIBE_BUILD_VERSION: ${NADOVIBE_BUILD_VERSION:-0.1.0}
@@ -42,7 +45,7 @@ services:
     ports:
       - "${PROJECTION_WORKER_PORT:-8094}:8094"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8094/healthz >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8094/readyz >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 10

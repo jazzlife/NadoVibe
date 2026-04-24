@@ -20,7 +20,7 @@ import {
   validateSandboxImageMetadata,
   type MigrationStep
 } from "@nadovibe/core-operations";
-import type { CapacityReservation, RunRecord, SandboxImageMetadata, WorkspaceEditorSession } from "@nadovibe/core-kernel";
+import { createDefaultAppServerCapabilityRegistry, type CapacityReservation, type RunRecord, type SandboxImageMetadata, type WorkspaceEditorSession } from "@nadovibe/core-kernel";
 
 test("phase 9 exposes service version metadata and operational admin metrics", () => {
   const metadata = createBuildMetadata("gateway", {
@@ -96,6 +96,21 @@ test("phase 9 blocks incompatible app-server protocol and unsafe active rollout"
   });
   assert.equal(incompatible.compatible, false);
   assert.ok(incompatible.missingMethodPolicies.includes("future/mutate"));
+
+  const capabilities = createDefaultAppServerCapabilityRegistry();
+  capabilities.registerModule({
+    id: "app-server.future-read",
+    title: "Future read-only protocol extension",
+    version: "2026-04-24",
+    methods: ["future/read"],
+    policies: [{ method: "future/read", family: "future_read", action: "allow", reason: "read-only additive app-server method" }]
+  });
+  assert.equal(checkAppServerCompatibility({
+    protocolVersion: "future-protocol",
+    platformVersion: "0.1.0",
+    methods: ["initialize", "future/read"],
+    capabilityRegistry: capabilities
+  }).compatible, true);
 
   const running: RunRecord = { id: "run_active", tenantId: "tenant_a", workspaceId: "workspace_a", state: "running", version: 7 };
   const blocked = planServiceRollout({

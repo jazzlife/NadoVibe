@@ -27,13 +27,29 @@ for (const file of sourceFiles) {
 }
 
 const adapter = readFileSync(resolve("services/app-server-adapter/src/server.ts"), "utf8");
-if (!adapter.includes("classifyAppServerMethod") || !adapter.includes("AppServerSchemaRegistry")) {
-  throw new Error("app-server-adapter must use Core protocol policy and schema registry");
+if (!adapter.includes("createDefaultAppServerCapabilityRegistry") || !adapter.includes("AppServerSchemaRegistry")) {
+  throw new Error("app-server-adapter must use app-server capability registry and schema registry");
+}
+
+const coreControlPlane = readFileSync(resolve("services/core-control-plane/src/server.ts"), "utf8");
+if (/AppServerSchemaRegistry|createOfficialDocsSchemaArtifact/.test(coreControlPlane)) {
+  throw new Error("core-control-plane must not depend on app-server protocol snapshots");
 }
 
 const gateway = readFileSync(resolve("apps/gateway/src/server.ts"), "utf8");
 if (!gateway.includes("core.seedIdentity") || !gateway.includes("core.createRun")) {
   throw new Error("gateway mutations must pass through Core command API");
+}
+if (/new\s+CoreControlPlane\s*\(/.test(gateway)) {
+  throw new Error("gateway must use Core Control Plane HTTP API instead of an in-process CoreControlPlane");
+}
+if (!gateway.includes("class WorkspaceRuntimeClient") || /from\s+["']node:fs["']/.test(gateway) || /assertWriteFileAllowed/.test(gateway) || /fileLeaseId\.startsWith\(["']lease_/.test(gateway)) {
+  throw new Error("gateway workspace file access must be delegated to Workspace Runtime with server-issued FileLease state");
+}
+
+const ui = readFileSync(resolve("packages/ui/src/index.ts"), "utf8");
+if (/lease_tablet_/.test(ui)) {
+  throw new Error("tablet workbench must use Gateway-issued FileLease ids instead of client-forged lease ids");
 }
 
 process.stdout.write(JSON.stringify({ ok: true, lint: "boundary checks passed" }) + "\n");

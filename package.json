@@ -31,6 +31,8 @@
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.5",
-    "codemirror": "^6.0.2"
+    "@types/pg": "^8.20.0",
+    "codemirror": "^6.0.2",
+    "pg": "^8.20.0"
   }
 }

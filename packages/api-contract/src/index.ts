@@ -126,6 +126,13 @@ export interface WorkspaceFileReadRequest {
   readonly path: string;
 }
 
+export interface WorkspaceFileReadResponse {
+  readonly path: string;
+  readonly content: string;
+  readonly fileLeaseId: string;
+  readonly leaseExpiresAt: number;
+}
+
 export interface WorkspaceFileWriteRequest {
   readonly workspaceId: string;
   readonly path: string;

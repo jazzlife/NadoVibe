@@ -3,16 +3,19 @@ import {
   APP_SERVER_CLIENT_INFO,
   APP_SERVER_THREAD_SERVICE_NAME,
   AppServerSchemaRegistry,
-  classifyAppServerMethod,
+  createDefaultAppServerCapabilityRegistry,
   createOfficialDocsSchemaArtifact,
   createRetrySchedule,
   normalizeAppServerNotification,
-  normalizeApprovalRequest
+  normalizeApprovalRequest,
+  type AppServerCapabilityModule,
+  type GeneratedAppServerSchemaArtifact
 } from "@nadovibe/core-kernel";
 import { checkAppServerCompatibility, createBuildMetadata } from "@nadovibe/core-operations";
 
 const port = Number.parseInt(process.env.APP_SERVER_ADAPTER_PORT ?? "8091", 10);
-const registry = new AppServerSchemaRegistry();
+const capabilities = createDefaultAppServerCapabilityRegistry();
+const registry = new AppServerSchemaRegistry(capabilities);
 registry.register(createOfficialDocsSchemaArtifact());
 const buildMetadata = createBuildMetadata("app-server-adapter");
 
@@ -36,14 +39,31 @@ const server = http.createServer(async (request, response) => {
     if (request.method === "POST" && request.url === "/v1/app-server/method-policy") {
       const body = await readJson(request);
       const method = typeof body === "object" && body !== null && "method" in body ? String(body.method) : "";
-      sendJson(response, 200, { policy: classifyAppServerMethod(method) });
+      sendJson(response, 200, { policy: registry.methodPolicy(method) });
+      return;
+    }
+    if (request.method === "GET" && request.url === "/v1/app-server/capability-modules") {
+      sendJson(response, 200, { modules: registry.capabilitySummaries() });
+      return;
+    }
+    if (request.method === "POST" && request.url === "/v1/app-server/capability-modules/register") {
+      const body = await readJson(request);
+      registry.registerCapabilityModule(body as unknown as AppServerCapabilityModule);
+      sendJson(response, 201, { modules: registry.capabilitySummaries() });
+      return;
+    }
+    if (request.method === "POST" && request.url === "/v1/app-server/schema/register") {
+      const body = await readJson(request);
+      registry.register(body as unknown as GeneratedAppServerSchemaArtifact);
+      sendJson(response, 201, { ok: true, modules: registry.capabilitySummaries() });
       return;
     }
     if (request.method === "GET" && request.url === "/v1/app-server/metadata") {
       sendJson(response, 200, {
         clientInfo: APP_SERVER_CLIENT_INFO,
         serviceName: APP_SERVER_THREAD_SERVICE_NAME,
-        credentialExposed: false
+        credentialExposed: false,
+        modules: registry.capabilitySummaries()
       });
       return;
     }

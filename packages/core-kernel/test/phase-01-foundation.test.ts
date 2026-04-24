@@ -88,8 +88,11 @@ test("Portainer stacks use explicit services, healthchecks, named volumes, and n
       assert.ok(service.healthcheck, `${stack}:${serviceName} must define healthcheck`);
       assert.ok(service.networks && service.networks.length > 0, `${stack}:${serviceName} must define network`);
       for (const mount of service.volumes ?? []) {
-        const source = mount.split(":")[0];
+        const [source, target] = mount.split(":");
         assert.ok(source);
+        if (serviceName === "workspace-runtime" && source === "/var/run/docker.sock" && target === "/var/run/docker.sock") {
+          continue;
+        }
         assert.equal(source.startsWith(".") || source.startsWith("/"), false, `${stack}:${serviceName} must not use Portainer bind mount`);
         assert.equal(volumes.has(source), true, `${stack}:${serviceName} volume ${source} must be declared`);
       }
