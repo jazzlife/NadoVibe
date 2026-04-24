@@ -9,6 +9,8 @@
 | `clients-stack` | browser-first web shell | `gateway-projection-stack` |
 | `ops-observability-stack` | initial operational health surface and logs | all platform stacks |
 
-All Portainer stacks attach to named networks and use named volumes. User/workspace sandbox containers are not duplicated platform stacks; they are runtime-controlled containers created by Workspace Runtime in later phases.
+All Portainer stacks attach to named networks and use named volumes. User/workspace sandbox containers are not duplicated platform stacks; they are runtime-controlled containers created by Workspace Runtime under Core policy.
+
+The current Workspace Runtime service exposes sandbox provision/stop endpoints and workspace file APIs. Production routing must still keep raw container ids, container ports, editor passwords, and filesystem paths behind Gateway/Core-issued sessions.
 
 The enforced deployment order is implemented in `@nadovibe/core-operations` and validated by `npm run ops:validate`.

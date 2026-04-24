@@ -4,7 +4,7 @@
 
 Phase 07 Tablet PWA Code Workbench를 Phase 06 Control Room과 같은 Gateway/Core 계약 위에 구현했습니다.
 
-- `design/phase07.pen` Pencil 디자인 소스 작성
+- Tablet Workbench 구현 계약을 실제 UI renderer와 contract test로 고정
 - `/workbench` Tablet PWA shell 추가
 - CodeMirror 6 기반 파일 편집기 통합
 - local esbuild 기반 CodeMirror vendor bundle 제공
@@ -27,7 +27,7 @@ Phase 07 Tablet PWA Code Workbench를 Phase 06 Control Room과 같은 Gateway/Co
 
 ## UX 검증
 
-Pencil 디자인 계약은 `phase07.pen`으로 저장했고, 구현 shell과 테스트가 같은 surface id/토큰을 기준으로 검증합니다.
+초기 Pencil 산출물은 현재 저장소에서 제거했습니다. 현재 검증 기준은 실제 구현된 shell renderer, surface id, layout token, touch target, offline/reconnect behavior, Playwright screenshot입니다.
 
 생성된 로컬 검증 아티팩트:
 

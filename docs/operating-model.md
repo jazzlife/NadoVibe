@@ -2,7 +2,7 @@
 
 Target runtime is Ubuntu Server with Docker and Portainer.
 
-Stack order:
+## Stack Order
 
 1. `core-stack`
 2. `app-server-adapter-stack`
@@ -11,7 +11,7 @@ Stack order:
 5. `clients-stack`
 6. `ops-observability-stack`
 
-Core persistent data classes:
+## Persistent Data Classes
 
 - event journal
 - PostgreSQL projection
@@ -23,3 +23,15 @@ Core persistent data classes:
 - backups
 
 Run `infra/portainer/core-stack/preflight.mjs` on the server to validate local volume root permissions before stack deployment.
+
+## Development Vs Production Update Model
+
+Production and staging Portainer stacks under `infra/portainer/*-stack` deploy immutable service images and named volumes.
+
+Development can run inside Docker/Portainer while still applying code updates immediately. The hot-update templates are documented in `infra/portainer/instant-update-dev-stacks.md`; they bind mount the source tree and run TypeScript services with `tsx watch`.
+
+The local compose file under `infra/local/docker-compose.yml` is a built-output smoke stack. It mounts service source read-only under `/app` and exposes the repository as a writable workspace root only for Workspace Runtime local development.
+
+## Sandbox Model
+
+User/workspace sandboxes are Docker containers created and controlled by Workspace Runtime under Core policy. Each sandbox owns its isolated filesystem/runtime surface and its own `code-server` process. Platform services are not duplicated per sandbox.
