@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import test from "node:test";
 import {
   assertPublicResponseSafe,
@@ -22,25 +20,15 @@ const context: CoreCommandContext = {
   actor: { type: "user", id: "user_phase_08" }
 };
 
-test("phase 8 Pencil design source defines the mobile command review contract", () => {
-  const design = JSON.parse(readFileSync(resolve(process.cwd(), "design/phase08.pen"), "utf8")) as {
-    version?: string;
-    variables?: Record<string, { type: string; value: unknown }>;
-    children?: Array<{ id?: string; name?: string; width?: unknown; height?: unknown; children?: unknown[] }>;
-  };
-  const root = design.children?.[0];
-  const variables = design.variables ?? {};
+test("phase 8 implementation defines the mobile command review contract", () => {
+  const html = renderMobileCommandReviewHtml();
+  const css = renderMobileCommandReviewCss();
 
-  assert.equal(design.version, "2.10");
-  assert.equal(root?.id, "bi8Au");
-  assert.match(root?.name ?? "", /Phase 08/);
-  assert.equal(root?.width, "$phase08/layout/phoneWidth");
-  assert.equal(root?.height, "$phase08/layout/phoneHeight");
-  assert.ok((root?.children?.length ?? 0) >= 5);
-  assert.equal(variables["phase08/layout/phoneWidth"]?.value, 390);
-  assert.equal(variables["phase08/layout/phoneHeight"]?.value, 844);
-  assert.equal(variables["phase08/size/touchTarget"]?.value, 48);
-  assert.equal(variables["phase08/layout/bottomNavHeight"]?.value, 72);
+  assert.match(html, /NadoVibe Mobile Command/);
+  assert.match(css, /max-width: 480px/);
+  assert.match(css, /grid-template-rows: auto auto minmax\(0, 1fr\) 72px/);
+  assert.match(css, /width: 48px/);
+  assert.match(css, /height: 48px/);
 });
 
 test("mobile command review projection prioritizes next actions without internal resource terms", () => {

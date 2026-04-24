@@ -1,29 +1,17 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import test from "node:test";
 import { parseEnqueueCommandRequest, parseHunkDecisionRequest, parseWorkspaceSearchRequest, renderGeneratedGatewayBrowserClient } from "@nadovibe/api-contract";
-import { renderServiceWorker, renderTabletWorkbenchAppJs, renderTabletWorkbenchHtml } from "@nadovibe/ui";
+import { renderServiceWorker, renderTabletWorkbenchAppJs, renderTabletWorkbenchCss, renderTabletWorkbenchHtml } from "@nadovibe/ui";
 
-test("phase 7 Pencil design source defines the tablet Code Workbench contract", () => {
-  const design = JSON.parse(readFileSync(resolve(process.cwd(), "design/phase07.pen"), "utf8")) as {
-    version?: string;
-    variables?: Record<string, { type: string; value: unknown }>;
-    children?: Array<{ id?: string; name?: string; width?: unknown; height?: unknown; children?: unknown[] }>;
-  };
-  const root = design.children?.[0];
-  const variables = design.variables ?? {};
+test("phase 7 implementation defines the tablet Code Workbench contract", () => {
+  const css = renderTabletWorkbenchCss();
+  const html = renderTabletWorkbenchHtml();
 
-  assert.equal(design.version, "2.10");
-  assert.equal(root?.id, "bi8Au");
-  assert.match(root?.name ?? "", /Phase 07/);
-  assert.equal(root?.width, 1024);
-  assert.equal(root?.height, 768);
-  assert.ok((root?.children?.length ?? 0) >= 4);
-  assert.equal(variables["phase07/size/touchTarget"]?.value, 44);
-  assert.equal(variables["phase07/layout/drawerWidth"]?.value, 248);
-  assert.equal(variables["phase07/layout/agentRailWidth"]?.value, 184);
-  assert.equal(variables["phase07/color/code"]?.value, "#0F172A");
+  assert.match(html, /NadoVibe Code Workbench/);
+  assert.match(css, /min-width: 44px/);
+  assert.match(css, /min-height: 44px/);
+  assert.match(css, /grid-template-columns: 248px minmax\(0, 1fr\) 184px/);
+  assert.match(css, /background: var\(--code\)/);
 });
 
 test("tablet workbench shell includes required Phase 7 surfaces and offline guard", () => {
