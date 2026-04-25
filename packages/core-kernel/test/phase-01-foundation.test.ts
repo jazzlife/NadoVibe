@@ -54,6 +54,7 @@ test("monorepo includes phase 1 app, service, package, infra, and docs boundarie
     "services/orchestrator/src/server.ts",
     "services/workspace-runtime/src/server.ts",
     "services/projection-worker/src/server.ts",
+    "services/deployment-agent/src/server.ts",
     "packages/domain/src/index.ts",
     "packages/api-contract/src/index.ts",
     "packages/ui/src/index.ts",
@@ -78,19 +79,39 @@ test("Portainer stacks use explicit services, healthchecks, named volumes, and n
   for (const stack of stacks) {
     const doc = YAML.parse(readFileSync(resolve(stack), "utf8")) as {
       services: Record<string, { healthcheck?: unknown; volumes?: string[]; networks?: string[] }>;
-      volumes?: Record<string, unknown>;
+      volumes?: Record<string, Record<string, unknown>>;
       networks: Record<string, unknown>;
     };
     assert.ok(doc.services);
     assert.ok(doc.networks);
-    const volumes = new Set(Object.keys(doc.volumes ?? {}));
+    const volumeDefinitions = doc.volumes ?? {};
+    const volumes = new Set(Object.keys(volumeDefinitions));
+    for (const [volumeName, volume] of Object.entries(volumeDefinitions)) {
+      if (volume.external === true) {
+        continue;
+      }
+      assert.equal(volume.driver, "local", `${stack}:${volumeName} must use local driver`);
+      const driverOpts = volume.driver_opts as Record<string, unknown> | undefined;
+      assert.equal(driverOpts?.type, "none", `${stack}:${volumeName} must use host directory bind type`);
+      assert.equal(driverOpts?.o, "bind", `${stack}:${volumeName} must use host directory bind option`);
+      assert.match(String(driverOpts?.device), /^\$\{NADOVIBE_DATA_ROOT:-\/data\/docker_data\/nadovibe\}\//, `${stack}:${volumeName} must store data under docker_data`);
+    }
     for (const [serviceName, service] of Object.entries(doc.services)) {
       assert.ok(service.healthcheck, `${stack}:${serviceName} must define healthcheck`);
       assert.ok(service.networks && service.networks.length > 0, `${stack}:${serviceName} must define network`);
       for (const mount of service.volumes ?? []) {
-        const [source, target] = mount.split(":");
+        const { source, target } = parseMountString(mount);
         assert.ok(source);
+        if (target === "/app" && source.includes("NADOVIBE_RUNTIME_CURRENT")) {
+          continue;
+        }
+        if (serviceName === "deployment-agent" && (target === "/srv/nadovibe/runtime" || target === "/data/docker_data/nadovibe/runtime") && source.includes("NADOVIBE_RUNTIME_ROOT")) {
+          continue;
+        }
         if (serviceName === "workspace-runtime" && source === "/var/run/docker.sock" && target === "/var/run/docker.sock") {
+          continue;
+        }
+        if (serviceName === "deployment-agent" && source === "/var/run/docker.sock" && target === "/var/run/docker.sock") {
           continue;
         }
         assert.equal(source.startsWith(".") || source.startsWith("/"), false, `${stack}:${serviceName} must not use Portainer bind mount`);
@@ -99,3 +120,16 @@ test("Portainer stacks use explicit services, healthchecks, named volumes, and n
     }
   }
 });
+
+function parseMountString(mount: string): { readonly source: string; readonly target: string; readonly mode?: string } {
+  const modeMatch = mount.match(/:(ro|rw)$/);
+  const mode = modeMatch?.[1];
+  const withoutMode = mode ? mount.slice(0, -(mode.length + 1)) : mount;
+  const separatorIndex = withoutMode.lastIndexOf(":");
+  if (separatorIndex <= 0) {
+    return { source: "", target: "" };
+  }
+  const source = withoutMode.slice(0, separatorIndex);
+  const target = withoutMode.slice(separatorIndex + 1);
+  return mode === undefined ? { source, target } : { source, target, mode };
+}

@@ -2,8 +2,9 @@ name: nadovibe_workspace_runtime
 
 services:
   workspace-runtime:
-    image: ${NADOVIBE_WORKSPACE_RUNTIME_IMAGE:-nadovibe/workspace-runtime:${NADOVIBE_IMAGE_TAG:-local}}
+    image: ${NADOVIBE_NODE_RUNTIME_IMAGE:-node:22-alpine}
     restart: unless-stopped
+    working_dir: /app
     command: ["node", "services/workspace-runtime/dist/server.js"]
     environment:
       WORKSPACE_RUNTIME_PORT: ${WORKSPACE_RUNTIME_PORT:-8093}
@@ -17,15 +18,17 @@ services:
       NADOVIBE_GIT_SHA: ${NADOVIBE_GIT_SHA:-local}
       NADOVIBE_EVENT_SCHEMA_VERSION: ${NADOVIBE_EVENT_SCHEMA_VERSION:-1}
       NADOVIBE_MIGRATION_VERSION: ${NADOVIBE_MIGRATION_VERSION:-3}
+      NADOVIBE_RELEASE_MANIFEST_PATH: /app/nadovibe.release.json
       APP_SERVER_PROTOCOL_VERSION: ${APP_SERVER_PROTOCOL_VERSION:-official-docs-2026-04-23}
     ports:
       - "${WORKSPACE_RUNTIME_PORT:-8093}:8093"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8093/readyz >/dev/null"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8093/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 10
     volumes:
+      - ${NADOVIBE_RUNTIME_CURRENT:-/data/docker_data/nadovibe/runtime/current}:/app:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - nadovibe_repositories:/var/lib/nadovibe/repositories
       - nadovibe_workspaces:/var/lib/nadovibe/workspaces
@@ -43,8 +46,18 @@ volumes:
     name: nadovibe_workspaces
   nadovibe_artifacts:
     name: nadovibe_artifacts
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/artifacts
   nadovibe_workspace_logs:
     name: nadovibe_workspace_logs
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/logs/workspace-runtime
 
 networks:
   nadovibe_core_net:

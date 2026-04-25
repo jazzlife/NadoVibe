@@ -51,20 +51,25 @@ services:
       - nadovibe_core_net
 
   core-control-plane:
-    image: ${NADOVIBE_CORE_IMAGE:-nadovibe/core-control-plane:${NADOVIBE_IMAGE_TAG:-local}}
+    image: ${NADOVIBE_NODE_RUNTIME_IMAGE:-node:22-alpine}
     restart: unless-stopped
     working_dir: /app
     command: ["node", "services/core-control-plane/dist/server.js"]
     environment:
       CORE_CONTROL_PLANE_PORT: ${CORE_CONTROL_PLANE_PORT:-8081}
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nadovibe}:${POSTGRES_PASSWORD:-change-me-in-portainer-secret}@postgres:5432/${POSTGRES_DB:-nadovibe}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-nadovibe}
+      POSTGRES_USER: ${POSTGRES_USER:-nadovibe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-in-portainer-secret}
       NADOVIBE_ENV_PROFILE: ${NADOVIBE_ENV_PROFILE:-local}
       NADOVIBE_IMAGE_TAG: ${NADOVIBE_IMAGE_TAG:-local}
       NADOVIBE_BUILD_VERSION: ${NADOVIBE_BUILD_VERSION:-0.1.0}
       NADOVIBE_GIT_SHA: ${NADOVIBE_GIT_SHA:-local}
       NADOVIBE_EVENT_SCHEMA_VERSION: ${NADOVIBE_EVENT_SCHEMA_VERSION:-1}
       NADOVIBE_MIGRATION_VERSION: ${NADOVIBE_MIGRATION_VERSION:-3}
+      NADOVIBE_RELEASE_MANIFEST_PATH: /app/nadovibe.release.json
       APP_SERVER_PROTOCOL_VERSION: ${APP_SERVER_PROTOCOL_VERSION:-official-docs-2026-04-23}
     ports:
       - "${CORE_CONTROL_PLANE_PORT:-8081}:8081"
@@ -72,11 +77,12 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8081/readyz >/dev/null"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8081/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 10
     volumes:
+      - ${NADOVIBE_RUNTIME_CURRENT:-/data/docker_data/nadovibe/runtime/current}:/app:ro
       - nadovibe_event_journal:/var/lib/nadovibe/event-journal
       - nadovibe_app_server_state:/var/lib/nadovibe/app-server-state
       - nadovibe_audit_logs:/var/log/nadovibe/audit
@@ -87,22 +93,67 @@ services:
 volumes:
   nadovibe_postgres_data:
     name: nadovibe_postgres_data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/postgres
   nadovibe_nats_data:
     name: nadovibe_nats_data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/nats
   nadovibe_event_journal:
     name: nadovibe_event_journal
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/event-journal
   nadovibe_object_store:
     name: nadovibe_object_store
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/object-store
   nadovibe_repositories:
     name: nadovibe_repositories
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/repositories
   nadovibe_workspaces:
     name: nadovibe_workspaces
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/workspaces
   nadovibe_app_server_state:
     name: nadovibe_app_server_state
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/app-server-state
   nadovibe_audit_logs:
     name: nadovibe_audit_logs
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/audit
   nadovibe_backups:
     name: nadovibe_backups
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/backups
 
 networks:
   nadovibe_core_net:

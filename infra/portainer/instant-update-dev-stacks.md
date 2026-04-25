@@ -2,19 +2,19 @@
 
 이 문서는 개발 단계에서 **Docker/Portainer 안에서 구동하되 코드 수정이 즉시 반영되는** Core stack과 user-sandbox stack 템플릿입니다.
 
-운영/스테이징용 `infra/portainer/*-stack/docker-compose.yml`은 immutable image tag를 배포하는 구조로 유지합니다. 이 문서의 stack은 개발 전용입니다.
+운영/스테이징용 `infra/portainer/*-stack/docker-compose.yml`은 `docs/service-sandbox-deployment.md`의 mounted release 모델을 사용합니다. 이 문서의 stack은 개발 중 파일 저장 즉시 재시작되는 `tsx watch` 전용입니다.
 
 ## 전제
 
 Ubuntu 개발 서버에 소스가 bind mount 가능한 경로로 존재해야 합니다.
 
 ```sh
-sudo mkdir -p /srv/nadovibe/source
-sudo chown -R "$USER":"$USER" /srv/nadovibe/source
-git clone https://github.com/jazzlife/NadoVibe.git /srv/nadovibe/source
+sudo mkdir -p /data/docker_data/nadovibe/source
+sudo chown -R "$USER":"$USER" /data/docker_data/nadovibe/source
+git clone https://github.com/jazzlife/NadoVibe.git /data/docker_data/nadovibe/source
 ```
 
-소스 업데이트는 host에서 `git pull`, `rsync`, 또는 편집 도구로 `/srv/nadovibe/source`를 갱신하면 됩니다. TypeScript 서비스는 `tsx watch`가 재시작합니다.
+소스 업데이트는 host에서 `git pull`, `rsync`, 또는 편집 도구로 `/data/docker_data/nadovibe/source`를 갱신하면 됩니다. TypeScript 서비스는 `tsx watch`가 재시작합니다.
 
 의존성 변경(`package.json`, `package-lock.json`)은 `node-deps` 서비스를 한 번 재시작하십시오.
 
@@ -45,7 +45,7 @@ x-node-service: &node-service
   working_dir: /app
   restart: unless-stopped
   volumes:
-    - ${NADOVIBE_SOURCE_ROOT:-/srv/nadovibe/source}:/app:rw
+    - ${NADOVIBE_SOURCE_ROOT:-/data/docker_data/nadovibe/source}:/app:rw
     - nadovibe_dev_node_modules:/app/node_modules
   depends_on:
     node-deps:
@@ -92,7 +92,7 @@ services:
     restart: unless-stopped
     command: ["sh", "-lc", "npm install && touch /app/node_modules/.nadovibe-dev-ready && tail -f /dev/null"]
     volumes:
-      - ${NADOVIBE_SOURCE_ROOT:-/srv/nadovibe/source}:/app:rw
+      - ${NADOVIBE_SOURCE_ROOT:-/data/docker_data/nadovibe/source}:/app:rw
       - nadovibe_dev_node_modules:/app/node_modules
     healthcheck:
       test: ["CMD-SHELL", "test -f /app/node_modules/.nadovibe-dev-ready"]
@@ -123,7 +123,7 @@ services:
       timeout: 5s
       retries: 30
     volumes:
-      - ${NADOVIBE_SOURCE_ROOT:-/srv/nadovibe/source}:/app:rw
+      - ${NADOVIBE_SOURCE_ROOT:-/data/docker_data/nadovibe/source}:/app:rw
       - nadovibe_dev_node_modules:/app/node_modules
       - nadovibe_dev_event_journal:/var/lib/nadovibe/event-journal
       - nadovibe_dev_app_server_state:/var/lib/nadovibe/app-server-state
@@ -144,7 +144,7 @@ services:
       timeout: 5s
       retries: 30
     volumes:
-      - ${NADOVIBE_SOURCE_ROOT:-/srv/nadovibe/source}:/app:rw
+      - ${NADOVIBE_SOURCE_ROOT:-/data/docker_data/nadovibe/source}:/app:rw
       - nadovibe_dev_node_modules:/app/node_modules
       - nadovibe_dev_app_server_state:/var/lib/nadovibe/app-server-state
       - nadovibe_dev_adapter_logs:/var/log/nadovibe/adapter
@@ -163,7 +163,7 @@ services:
       timeout: 5s
       retries: 30
     volumes:
-      - ${NADOVIBE_SOURCE_ROOT:-/srv/nadovibe/source}:/app:rw
+      - ${NADOVIBE_SOURCE_ROOT:-/data/docker_data/nadovibe/source}:/app:rw
       - nadovibe_dev_node_modules:/app/node_modules
       - nadovibe_dev_orchestrator_logs:/var/log/nadovibe/orchestrator
 
@@ -186,7 +186,7 @@ services:
       retries: 30
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${NADOVIBE_SOURCE_ROOT:-/srv/nadovibe/source}:/app:rw
+      - ${NADOVIBE_SOURCE_ROOT:-/data/docker_data/nadovibe/source}:/app:rw
       - nadovibe_dev_node_modules:/app/node_modules
       - nadovibe_dev_repositories:/var/lib/nadovibe/repositories
       - nadovibe_dev_workspaces:/var/lib/nadovibe/workspaces
@@ -208,7 +208,7 @@ services:
       timeout: 5s
       retries: 30
     volumes:
-      - ${NADOVIBE_SOURCE_ROOT:-/srv/nadovibe/source}:/app:rw
+      - ${NADOVIBE_SOURCE_ROOT:-/data/docker_data/nadovibe/source}:/app:rw
       - nadovibe_dev_node_modules:/app/node_modules
       - nadovibe_dev_projection_logs:/var/log/nadovibe/projection-worker
 
@@ -310,22 +310,22 @@ networks:
 host 준비:
 
 ```sh
-sudo mkdir -p /srv/nadovibe/sandboxes/dev-tenant/dev-user/dev-workspace/workspace
-sudo mkdir -p /srv/nadovibe/sandboxes/dev-tenant/dev-user/dev-workspace/repository
-sudo chown -R 1000:1000 /srv/nadovibe/sandboxes
+sudo mkdir -p /data/docker_data/nadovibe/sandboxes/dev-tenant/dev-user/dev-workspace/workspace
+sudo mkdir -p /data/docker_data/nadovibe/sandboxes/dev-tenant/dev-user/dev-workspace/repository
+sudo chown -R 1000:1000 /data/docker_data/nadovibe/sandboxes
 ```
 
 Portainer environment variables 예시:
 
 ```env
-NADOVIBE_SOURCE_ROOT=/srv/nadovibe/source
+NADOVIBE_SOURCE_ROOT=/data/docker_data/nadovibe/source
 NADOVIBE_TENANT_ID=dev-tenant
 NADOVIBE_USER_ID=dev-user
 NADOVIBE_WORKSPACE_ID=dev-workspace
 NADOVIBE_RUN_ID=dev-run
 NADOVIBE_CODE_SERVER_PORT=19080
 NADOVIBE_SANDBOX_IMAGE=nadovibe/sandbox:local
-NADOVIBE_SANDBOX_ROOT=/srv/nadovibe/sandboxes/dev-tenant/dev-user/dev-workspace
+NADOVIBE_SANDBOX_ROOT=/data/docker_data/nadovibe/sandboxes/dev-tenant/dev-user/dev-workspace
 ```
 
 compose:
@@ -366,9 +366,9 @@ services:
     ports:
       - "127.0.0.1:${NADOVIBE_CODE_SERVER_PORT:-19080}:8080"
     volumes:
-      - ${NADOVIBE_SANDBOX_ROOT:-/srv/nadovibe/sandboxes/dev-tenant/dev-user/dev-workspace}/workspace:/workspace:rw
-      - ${NADOVIBE_SANDBOX_ROOT:-/srv/nadovibe/sandboxes/dev-tenant/dev-user/dev-workspace}/repository:/workspace/repository:rw
-      - ${NADOVIBE_SOURCE_ROOT:-/srv/nadovibe/source}:/platform:ro
+      - ${NADOVIBE_SANDBOX_ROOT:-/data/docker_data/nadovibe/sandboxes/dev-tenant/dev-user/dev-workspace}/workspace:/workspace:rw
+      - ${NADOVIBE_SANDBOX_ROOT:-/data/docker_data/nadovibe/sandboxes/dev-tenant/dev-user/dev-workspace}/repository:/workspace/repository:rw
+      - ${NADOVIBE_SOURCE_ROOT:-/data/docker_data/nadovibe/source}:/platform:ro
       - sandbox_codeserver:/home/coder/.local/share/code-server
       - sandbox_cache:/home/coder/.cache/code-server
       - sandbox_artifacts:/artifacts
@@ -411,7 +411,7 @@ networks:
 
 | 변경 대상 | 즉시 반영 방식 | 필요한 조치 |
 | --- | --- | --- |
-| Core/Gateway/Web/Service TypeScript 코드 | `/srv/nadovibe/source` bind mount + `tsx watch` | 파일 저장 또는 `git pull` |
+| Core/Gateway/Web/Service TypeScript 코드 | `/data/docker_data/nadovibe/source` bind mount + `tsx watch` | 파일 저장 또는 `git pull` |
 | UI/CSS/HTML 렌더 코드 | Web container `tsx watch` | 브라우저 새로고침 |
 | Gateway/API 코드 | Gateway container `tsx watch` | 요청 재시도 |
 | package dependency | `nadovibe_dev_node_modules` named volume | `node-deps` 재시작 |
@@ -424,5 +424,5 @@ networks:
 - 이 문서의 compose는 개발 전용입니다.
 - bind mount를 허용합니다.
 - `NADOVIBE_IMAGE_TAG=dev-bind`를 사용합니다.
-- production/staging stack에는 적용하지 않습니다.
-- production/staging은 기존 Portainer stack처럼 immutable image tag, named volume, rollout/drain/rollback 정책을 사용합니다.
+- production/staging stack에는 이 `tsx watch` 구성을 적용하지 않습니다.
+- production/staging은 `node:22-alpine` service sandbox, `/data/docker_data/nadovibe/runtime/current` mounted release, Deployment Agent, rollout/drain/rollback 정책을 사용합니다.

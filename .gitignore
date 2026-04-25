@@ -8,6 +8,7 @@ playwright-report/
 .env
 .env.*
 !.env.example
+.runtime/
 
 # This monorepo's packages directory is source code. Some developer machines
 # globally ignore generic Packages folders, so explicitly keep it tracked here.

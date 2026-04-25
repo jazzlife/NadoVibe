@@ -1,5 +1,5 @@
 import http from "node:http";
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   assertNoAnonymousSandboxVolumes,
@@ -218,21 +218,31 @@ function workScopeFor(workspaceId: string): WorkScope {
 }
 
 function readFileTree(workspaceId: string, requestedPath: string): readonly FileTreeItem[] {
+  ensureWorkspaceRoot(workspaceId);
   const base = safeWorkspacePath(workspaceId, requestedPath);
+  if (!existsSync(base)) return [];
   const items: FileTreeItem[] = [];
   walk(workspaceId, base, path.relative(workspaceRootFor(workspaceId), base), 0, items);
   return items.slice(0, 320);
 }
 
 function searchWorkspace(workspaceId: string, query: string, requestedPath: string): WorkspaceSearchResponse {
+  ensureWorkspaceRoot(workspaceId);
   const normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.length < 2) {
     return { workspaceId, query, results: [] };
   }
   const base = safeWorkspacePath(workspaceId, requestedPath);
+  if (!existsSync(base)) return { workspaceId, query, results: [] };
   const results: WorkspaceSearchResultItem[] = [];
   searchWalk(workspaceId, base, normalizedQuery, results);
   return { workspaceId, query, results: results.slice(0, 40) };
+}
+
+function ensureWorkspaceRoot(workspaceId: string): string {
+  const root = workspaceRootFor(workspaceId);
+  mkdirSync(root, { recursive: true });
+  return root;
 }
 
 function issueFileLease(workspaceId: string, absolutePath: string): FileLease {

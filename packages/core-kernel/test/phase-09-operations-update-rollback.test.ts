@@ -5,18 +5,22 @@ import {
   checkAppServerCompatibility,
   createBackupPlan,
   createBuildMetadata,
+  createMountedReleaseManifest,
   createHostCapacitySampleFromOs,
   evaluateDockerHostPreflight,
   evaluateDrainModeAdmission,
+  planMountedReleaseActivation,
   planServiceRollout,
   quarantineFailedRollout,
   routeCanaryVersion,
   runMigrationPlan,
+  validateMountedReleaseManifest,
   validateComposeEnvironment,
   validatePortainerStackOrder,
   validateQuotaProfile,
   validateRestoreDryRun,
   validateRollbackCompatibility,
+  validateServiceVersionObservations,
   validateSandboxImageMetadata,
   type MigrationStep
 } from "@nadovibe/core-operations";
@@ -55,6 +59,41 @@ test("phase 9 exposes service version metadata and operational admin metrics", (
   assert.ok(snapshot.capacity.workerPoolSaturation.length >= 3);
 });
 
+test("phase 9 service sandbox release manifest prevents mixed mounted-code versions", () => {
+  const manifest = createMountedReleaseManifest({
+    releaseId: "2026.04.25-abcdef1",
+    gitSha: "abcdef1",
+    sourceRoot: "/srv/nadovibe/runtime/releases/2026.04.25-abcdef1",
+    envProfile: "production",
+    platformVersion: "0.1.0"
+  });
+  assert.equal(validateMountedReleaseManifest(manifest).ok, true);
+
+  const gatewayOnly = planMountedReleaseActivation({ manifest, changedPaths: ["apps/gateway/src/server.ts"] });
+  assert.equal(gatewayOnly.allowed, true);
+  assert.deepEqual(gatewayOnly.impactedServices, ["gateway"]);
+  assert.equal(gatewayOnly.restartGroups[0]?.group, "gateway");
+
+  const packageWide = planMountedReleaseActivation({ manifest, changedPaths: ["packages/core-operations/src/index.ts"] });
+  assert.equal(packageWide.allowed, true);
+  assert.ok(packageWide.impactedServices.includes("core-control-plane"));
+  assert.ok(packageWide.impactedServices.includes("web"));
+
+  const observations = manifest.services
+    .filter((service) => service.service !== "deployment-agent")
+    .map((service) => ({
+      service: service.service,
+      ok: true,
+      platformVersion: manifest.platformVersion,
+      gitSha: manifest.gitSha,
+      eventSchemaVersion: manifest.eventSchemaVersion,
+      migrationVersion: manifest.migrationVersion,
+      appServerProtocolVersion: manifest.appServerProtocolVersion
+    }));
+  assert.equal(validateServiceVersionObservations(manifest, observations).ok, true);
+  assert.equal(validateServiceVersionObservations(manifest, [{ ...observations[0]!, gitSha: "oldsha1" }, ...observations.slice(1)]).ok, false);
+});
+
 test("phase 9 validates quota profiles, compose environment, stack order, and host preflight", () => {
   assert.equal(validateQuotaProfile("production").ok, true);
   assert.equal(validatePortainerStackOrder().ok, true);
@@ -67,6 +106,9 @@ test("phase 9 validates quota profiles, compose environment, stack order, and ho
   assert.equal(validateComposeEnvironment("production", {
     NADOVIBE_ENV_PROFILE: "production",
     NADOVIBE_IMAGE_TAG: "2026.04.23-abc123",
+    NADOVIBE_NODE_RUNTIME_IMAGE: "node:22-alpine",
+    NADOVIBE_RUNTIME_CURRENT: "/data/docker_data/nadovibe/runtime/current",
+    NADOVIBE_DATA_ROOT: "/data/docker_data/nadovibe",
     POSTGRES_PASSWORD: "use-portainer-secret-value",
     SYSBASE_ENABLED: "false"
   }).ok, true);

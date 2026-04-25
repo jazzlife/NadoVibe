@@ -173,6 +173,8 @@ test("workspace-runtime service exposes Docker sandbox lifecycle without raw bro
   assert.match(source, /\/v1\/workspace\/files\/write/);
   assert.match(source, /issueFileLease/);
   assert.match(source, /WORKSPACE_RUNTIME_SINGLE_WORKSPACE_ROOT|WORKSPACE_RUNTIME_WORKSPACE_BASE_DIR/);
+  assert.match(source, /ensureWorkspaceRoot/);
+  assert.match(source, /existsSync\(base\)/);
   assert.match(source, /dockerRequest/);
   assert.match(source, /NanoCpus/);
   assert.match(source, /PidsLimit/);

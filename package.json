@@ -19,7 +19,8 @@
     "preflight:core": "node infra/portainer/core-stack/preflight.mjs --check-only",
     "ops:validate": "node --import tsx scripts/ops-validate.mjs",
     "durability:suite": "node --import tsx scripts/durability-suite.mjs",
-    "failure:inject": "node scripts/failure-injection.mjs"
+    "failure:inject": "node scripts/failure-injection.mjs",
+    "release:prepare": "node scripts/prepare-mounted-release.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

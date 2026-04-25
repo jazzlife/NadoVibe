@@ -305,7 +305,7 @@ const server = http.createServer(async (request, response) => {
     }
     if (request.method === "GET" && request.url === "/api/admin/operations") {
       sendJson(response, 200, buildOperationalAdminSnapshot({
-        services: ["core-control-plane", "app-server-adapter", "orchestrator", "workspace-runtime", "projection-worker", "gateway", "web"],
+        services: ["core-control-plane", "app-server-adapter", "orchestrator", "workspace-runtime", "projection-worker", "gateway", "web", "deployment-agent"],
         reservations: await core.activeReservations(),
         projectionLagEvents: 0,
         queueLagMs: 0

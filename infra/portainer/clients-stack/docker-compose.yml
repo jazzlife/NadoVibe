@@ -2,8 +2,9 @@ name: nadovibe_clients
 
 services:
   web:
-    image: ${NADOVIBE_WEB_IMAGE:-nadovibe/web:${NADOVIBE_IMAGE_TAG:-local}}
+    image: ${NADOVIBE_NODE_RUNTIME_IMAGE:-node:22-alpine}
     restart: unless-stopped
+    working_dir: /app
     command: ["node", "apps/web/dist/server.js"]
     environment:
       WEB_PORT: ${WEB_PORT:-5173}
@@ -13,14 +14,18 @@ services:
       NADOVIBE_GIT_SHA: ${NADOVIBE_GIT_SHA:-local}
       NADOVIBE_EVENT_SCHEMA_VERSION: ${NADOVIBE_EVENT_SCHEMA_VERSION:-1}
       NADOVIBE_MIGRATION_VERSION: ${NADOVIBE_MIGRATION_VERSION:-3}
+      NADOVIBE_RELEASE_MANIFEST_PATH: /app/nadovibe.release.json
       APP_SERVER_PROTOCOL_VERSION: ${APP_SERVER_PROTOCOL_VERSION:-official-docs-2026-04-23}
+      GATEWAY_BASE_URL: ${GATEWAY_BASE_URL:-}
     ports:
       - "${WEB_PORT:-5173}:5173"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/healthz >/dev/null"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:5173/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 10
+    volumes:
+      - ${NADOVIBE_RUNTIME_CURRENT:-/data/docker_data/nadovibe/runtime/current}:/app:ro
     networks:
       - nadovibe_core_net
 

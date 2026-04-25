@@ -18,6 +18,7 @@
     { "path": "./services/orchestrator" },
     { "path": "./services/workspace-runtime" },
     { "path": "./services/projection-worker" },
+    { "path": "./services/deployment-agent" },
     { "path": "./apps/gateway" },
     { "path": "./apps/web" }
   ]

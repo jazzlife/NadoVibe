@@ -2,8 +2,9 @@ name: nadovibe_app_server_adapter
 
 services:
   app-server-adapter:
-    image: ${NADOVIBE_APP_SERVER_ADAPTER_IMAGE:-nadovibe/app-server-adapter:${NADOVIBE_IMAGE_TAG:-local}}
+    image: ${NADOVIBE_NODE_RUNTIME_IMAGE:-node:22-alpine}
     restart: unless-stopped
+    working_dir: /app
     command: ["node", "services/app-server-adapter/dist/server.js"]
     environment:
       APP_SERVER_ADAPTER_PORT: ${APP_SERVER_ADAPTER_PORT:-8091}
@@ -13,23 +14,26 @@ services:
       NADOVIBE_GIT_SHA: ${NADOVIBE_GIT_SHA:-local}
       NADOVIBE_EVENT_SCHEMA_VERSION: ${NADOVIBE_EVENT_SCHEMA_VERSION:-1}
       NADOVIBE_MIGRATION_VERSION: ${NADOVIBE_MIGRATION_VERSION:-3}
+      NADOVIBE_RELEASE_MANIFEST_PATH: /app/nadovibe.release.json
       APP_SERVER_PROTOCOL_VERSION: ${APP_SERVER_PROTOCOL_VERSION:-official-docs-2026-04-23}
     ports:
       - "${APP_SERVER_ADAPTER_PORT:-8091}:8091"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8091/healthz >/dev/null"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8091/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 10
     volumes:
+      - ${NADOVIBE_RUNTIME_CURRENT:-/data/docker_data/nadovibe/runtime/current}:/app:ro
       - nadovibe_app_server_state:/var/lib/nadovibe/app-server-state
       - nadovibe_adapter_logs:/var/log/nadovibe/adapter
     networks:
       - nadovibe_core_net
 
   orchestrator:
-    image: ${NADOVIBE_ORCHESTRATOR_IMAGE:-nadovibe/orchestrator:${NADOVIBE_IMAGE_TAG:-local}}
+    image: ${NADOVIBE_NODE_RUNTIME_IMAGE:-node:22-alpine}
     restart: unless-stopped
+    working_dir: /app
     command: ["node", "services/orchestrator/dist/server.js"]
     environment:
       ORCHESTRATOR_PORT: ${ORCHESTRATOR_PORT:-8092}
@@ -39,15 +43,17 @@ services:
       NADOVIBE_GIT_SHA: ${NADOVIBE_GIT_SHA:-local}
       NADOVIBE_EVENT_SCHEMA_VERSION: ${NADOVIBE_EVENT_SCHEMA_VERSION:-1}
       NADOVIBE_MIGRATION_VERSION: ${NADOVIBE_MIGRATION_VERSION:-3}
+      NADOVIBE_RELEASE_MANIFEST_PATH: /app/nadovibe.release.json
       APP_SERVER_PROTOCOL_VERSION: ${APP_SERVER_PROTOCOL_VERSION:-official-docs-2026-04-23}
     ports:
       - "${ORCHESTRATOR_PORT:-8092}:8092"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8092/healthz >/dev/null"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8092/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 10
     volumes:
+      - ${NADOVIBE_RUNTIME_CURRENT:-/data/docker_data/nadovibe/runtime/current}:/app:ro
       - nadovibe_orchestrator_logs:/var/log/nadovibe/orchestrator
     networks:
       - nadovibe_core_net
@@ -58,8 +64,18 @@ volumes:
     name: nadovibe_app_server_state
   nadovibe_adapter_logs:
     name: nadovibe_adapter_logs
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/logs/adapter
   nadovibe_orchestrator_logs:
     name: nadovibe_orchestrator_logs
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/logs/orchestrator
 
 networks:
   nadovibe_core_net:

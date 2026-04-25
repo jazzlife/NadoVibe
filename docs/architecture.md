@@ -11,6 +11,7 @@ The current implementation keeps the original intent explicit:
 - Orchestrator and agents must operate through Core contracts and runtime gateways.
 - Projection Worker rebuilds read models from durable Core events.
 - Per-user/per-workspace sandbox containers are execution surfaces. They do not contain a copy of Gateway, Core, Event Store, Projection Worker, Orchestrator, or App-Server Adapter.
+- Deployment Agent owns service sandbox release activation, Docker service restart, health verification, and mounted release version consistency checks.
 
 ```mermaid
 flowchart TB
@@ -63,6 +64,8 @@ PostgreSQL is the primary source of truth when `DATABASE_URL` is configured. Cor
 NATS remains optional fanout infrastructure. It is not the source of truth for product state.
 
 Local volumes are explicit for event journal, PostgreSQL data, object/artifact storage, repositories, workspaces, app-server state, audit logs, backups, and service logs.
+
+Platform services are deployed as service sandboxes. The container image supplies the Node runtime, while the NadoVibe code is mounted from `/data/docker_data/nadovibe/runtime/current` and pinned by `nadovibe.release.json`. See `docs/service-sandbox-deployment.md`.
 
 ## UX Intent
 

@@ -30,7 +30,11 @@ for (const stackName of requiredStacks) {
 const results = [];
 for (const file of [...stackFiles, localCompose]) {
   const isPortainer = file.includes("/infra/portainer/");
-  const result = validateComposeFile(file, { allowBindMounts: !isPortainer, requireExternalCoreNetwork: isPortainer && !file.includes("/core-stack/") });
+  const result = validateComposeFile(file, {
+    allowBindMounts: !isPortainer,
+    requireExternalCoreNetwork: isPortainer && !file.includes("/core-stack/"),
+    requireBindBackedNamedVolumes: isPortainer
+  });
   results.push(result);
 }
 
@@ -61,6 +65,11 @@ function validateComposeFile(file, options) {
   assertRecord(volumes, `${file} volumes`);
   const volumeNames = new Set(Object.keys(volumes));
   const networkNames = new Set(Object.keys(doc.networks));
+  if (options.requireBindBackedNamedVolumes) {
+    for (const [volumeName, volume] of Object.entries(volumes)) {
+      validateNamedVolume(file, volumeName, volume);
+    }
+  }
   for (const [serviceName, service] of Object.entries(doc.services)) {
     assertRecord(service, `${file} service ${serviceName}`);
     if (!service.healthcheck) {
@@ -90,17 +99,45 @@ function validateComposeFile(file, options) {
   };
 }
 
+function validateNamedVolume(file, volumeName, volume) {
+  assertRecord(volume, `${file} volume ${volumeName}`);
+  if (volume.external === true) {
+    return;
+  }
+  if (volume.driver !== "local") {
+    throw new Error(`${file} volume ${volumeName} must use the local driver`);
+  }
+  assertRecord(volume.driver_opts, `${file} volume ${volumeName} driver_opts`);
+  if (volume.driver_opts.type !== "none" || volume.driver_opts.o !== "bind") {
+    throw new Error(`${file} volume ${volumeName} must be backed by a host bind directory`);
+  }
+  const device = volume.driver_opts.device;
+  if (typeof device !== "string" || !device.startsWith("${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}/")) {
+    throw new Error(`${file} volume ${volumeName} must live under \${NADOVIBE_DATA_ROOT:-/data/docker_data/nadovibe}`);
+  }
+}
+
 function validateMount(file, serviceName, mount, volumeNames, allowBindMounts) {
   if (typeof mount !== "string") {
     throw new Error(`${file} service ${serviceName} uses unsupported non-string volume mount`);
   }
-  const [source, target, mode] = mount.split(":");
+  const { source, target, mode } = parseMountString(mount);
   if (!source || !target) {
     throw new Error(`${file} service ${serviceName} has anonymous or target-only mount: ${mount}`);
   }
-  const isBindMount = source.startsWith(".") || source.startsWith("/");
+  const effectiveSource = envDefaultSource(source);
+  const isBindMount = effectiveSource.startsWith(".") || effectiveSource.startsWith("/");
   if (isBindMount) {
+    if (target === "/app" && mode === "ro" && source.includes("NADOVIBE_RUNTIME_CURRENT")) {
+      return;
+    }
+    if (serviceName === "deployment-agent" && (target === "/srv/nadovibe/runtime" || target === "/data/docker_data/nadovibe/runtime") && mode === "rw" && source.includes("NADOVIBE_RUNTIME_ROOT")) {
+      return;
+    }
     if (serviceName === "workspace-runtime" && source === "/var/run/docker.sock" && target === "/var/run/docker.sock") {
+      return;
+    }
+    if (serviceName === "deployment-agent" && source === "/var/run/docker.sock" && target === "/var/run/docker.sock") {
       return;
     }
     if (serviceName === "workspace-runtime" && file.includes("/infra/local/") && target === "/workspace" && mode === "rw") {
@@ -117,6 +154,22 @@ function validateMount(file, serviceName, mount, volumeNames, allowBindMounts) {
   if (!volumeNames.has(source)) {
     throw new Error(`${file} service ${serviceName} references undefined named volume ${source}`);
   }
+}
+
+function parseMountString(mount) {
+  const modeMatch = mount.match(/:(ro|rw)$/);
+  const mode = modeMatch ? modeMatch[1] : undefined;
+  const withoutMode = mode ? mount.slice(0, -(mode.length + 1)) : mount;
+  const separatorIndex = withoutMode.lastIndexOf(":");
+  if (separatorIndex <= 0) {
+    return { source: "", target: "", mode: undefined };
+  }
+  return { source: withoutMode.slice(0, separatorIndex), target: withoutMode.slice(separatorIndex + 1), mode };
+}
+
+function envDefaultSource(source) {
+  const match = source.match(/^\$\{[^:}]+:-([^}]+)\}$/);
+  return match ? match[1] : source;
 }
 
 function findDockerCompose() {
