@@ -429,12 +429,12 @@ export function renderMobileCommandReviewHtml(): string {
 export function renderManifest(): string {
   return JSON.stringify(
     {
-      name: "NadoVibe Control Room",
+      name: "NadoVibe Mobile Chat IDE",
       short_name: "NadoVibe",
-      start_url: "/",
+      start_url: "/mobile",
       display: "standalone",
       background_color: ideShellTokens.color.canvas,
-      theme_color: ideShellTokens.color.teal,
+      theme_color: "#3182f6",
       icons: []
     },
     null,
@@ -444,7 +444,7 @@ export function renderManifest(): string {
 
 export function renderServiceWorker(): string {
   return `
-const CACHE_NAME = 'nadovibe-control-room-v1';
+const CACHE_NAME = 'nadovibe-mobile-chat-ide-v2';
 const SHELL_ASSETS = ['/', '/workbench', '/mobile', '/assets/gateway-client.js', '/assets/control-room.js', '/assets/workbench.js', '/assets/mobile-command-review.js', '/assets/codemirror-vendor.js', '/manifest.webmanifest'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS)));
