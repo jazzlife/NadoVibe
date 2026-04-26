@@ -53,7 +53,11 @@ for (const entry of releaseEntries) {
 }
 
 if (installRuntimeDependencies) {
-  execFileSync("docker", ["run", "--rm", "-v", `${releaseDir}:/app`, "-w", "/app", runtimeInstallImage, "npm", "ci"], { stdio: "inherit" });
+  const installOutput = execFileSync("docker", ["run", "--rm", "-v", `${releaseDir}:/app`, "-w", "/app", runtimeInstallImage, "npm", "ci"], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"]
+  });
+  process.stderr.write(installOutput);
 }
 
 repairWorkspaceSymlinks(releaseDir);
