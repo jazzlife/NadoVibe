@@ -93,7 +93,7 @@ for (const width of [390, 430, 480]) {
   test(`phase 8 mobile layout remains reachable at ${width}px`, async ({ page, baseURL }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto(`${baseURL}/mobile#inbox`);
-    await expect(page.locator("#mobileNextAction")).toBeVisible();
+    await expect(page.locator("#chat-list")).toBeVisible();
     await expect(page.locator(".mobile-bottom-nav")).toBeVisible();
     const metrics = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,

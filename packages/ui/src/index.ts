@@ -293,6 +293,7 @@ export function renderMobileCommandReviewHtml(): string {
 <body>
   <a class="skip-link" href="#mobileMain">Skip to mobile chat IDE</a>
   <div id="mobileApp" class="mobile-shell mobile-chat-ide-complete-storyboard" data-storyboard="mobile-chat-ide-complete-storyboard" data-device="galaxy-s24-ultra" data-connection="connected">
+    <div class="mobile-device-status" aria-hidden="true"><span>09:41</span><span>5G ●● 92</span></div>
     <header class="mobile-topbar" aria-label="Mobile command header">
       <button class="mobile-icon-button mobile-menu-button" type="button" aria-label="채팅 목록">
         <span aria-hidden="true">‹</span>
@@ -307,7 +308,7 @@ export function renderMobileCommandReviewHtml(): string {
     </header>
     <section id="mobileServiceStatus" class="mobile-status-strip" role="status">실서버 연결 상태를 확인하고 있습니다.</section>
     <main id="mobileMain" class="mobile-main" aria-label="mobile-chat-ide-complete-storyboard">
-      <section id="chat-list" class="mobile-section mobile-chat-list-screen" aria-label="채팅 리스트 화면">
+      <section id="chat-list" class="mobile-section mobile-screen mobile-chat-list-screen" data-mobile-screen="list" data-active="true" aria-label="채팅 리스트 화면">
         <span id="inbox" class="mobile-anchor" aria-hidden="true"></span>
         <div class="mobile-section-heading">
           <div>
@@ -323,7 +324,7 @@ export function renderMobileCommandReviewHtml(): string {
         <div id="mobileInboxList" class="mobile-list mobile-room-list"></div>
       </section>
 
-      <section id="chat-room" class="mobile-section mobile-chat-room-screen" aria-label="채팅 화면">
+      <section id="chat-room" class="mobile-section mobile-screen mobile-chat-room-screen" data-mobile-screen="chat" aria-label="채팅 화면">
         <div class="mobile-section-heading mobile-chat-heading">
           <div>
             <span class="mobile-kicker">Singleview</span>
@@ -369,7 +370,7 @@ export function renderMobileCommandReviewHtml(): string {
         </section>
       </section>
 
-      <section id="notification-settings" class="mobile-section mobile-settings-screen" aria-label="설정 다이얼로그 화면">
+      <section id="notification-settings" class="mobile-section mobile-screen mobile-settings-screen" data-mobile-screen="settings" aria-label="설정 다이얼로그 화면">
         <div class="mobile-settings-dialog">
           <div class="mobile-section-heading">
             <div>
@@ -1527,6 +1528,208 @@ export function renderMobileCommandReviewCss(): string {
       font-size: 12px;
       line-height: 18px;
     }
+    html, body {
+      min-height: 100%;
+      margin: 0;
+      background: var(--mobile-bg);
+      color: var(--mobile-text);
+      font-family: "Toss Product Sans", "Tossface", "SF Pro KR", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", Roboto, "Noto Sans KR", sans-serif;
+      letter-spacing: 0;
+    }
+    * { box-sizing: border-box; }
+    .mobile-shell {
+      min-height: 100dvh;
+      grid-template-rows: 28px 56px 26px minmax(0, 1fr) 64px;
+      gap: 0;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+      overflow: hidden;
+      box-shadow: 0 0 0 1px var(--mobile-line);
+    }
+    .mobile-device-status {
+      min-height: 28px;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      padding: 0 20px 5px;
+      background: var(--mobile-surface);
+      color: #111827;
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .mobile-topbar {
+      min-height: 56px;
+      grid-template-columns: 38px minmax(0, 1fr) 38px;
+      gap: 6px;
+      padding: 6px 14px;
+      background: var(--mobile-surface);
+      position: static;
+      backdrop-filter: none;
+    }
+    .mobile-icon-button {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      font-size: 22px;
+    }
+    .mobile-status-strip {
+      min-height: 26px;
+      padding: 0 16px;
+      border: 0;
+      border-bottom: 1px solid #d6eaff;
+      border-radius: 0;
+      font-size: 10px;
+    }
+    .mobile-main {
+      display: block;
+      padding: 10px;
+      background: var(--mobile-bg);
+      overflow: auto;
+    }
+    .mobile-screen {
+      display: none;
+      min-height: 100%;
+    }
+    .mobile-screen[data-active="true"] {
+      display: grid;
+    }
+    .mobile-section {
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .mobile-chat-list-screen {
+      grid-template-rows: auto auto minmax(0, 1fr);
+    }
+    .mobile-chat-room-screen {
+      grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    }
+    .mobile-section-heading {
+      min-height: 56px;
+      padding: 0 14px;
+    }
+    .mobile-section-heading h2 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 24px;
+      font-weight: 700;
+    }
+    .mobile-search-row {
+      min-height: 42px;
+      margin: 10px 12px 0;
+      border-radius: 8px;
+    }
+    .mobile-list {
+      gap: 8px;
+      padding: 10px;
+    }
+    .mobile-card {
+      min-height: 52px;
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .mobile-card p { margin: 0; }
+    .mobile-room-list .mobile-card {
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      column-gap: 10px;
+      border-color: transparent;
+      border-bottom-color: var(--mobile-line);
+      border-radius: 0;
+      padding: 10px 2px;
+      box-shadow: none;
+    }
+    .mobile-room-list .mobile-card::before {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--mobile-blue);
+      grid-column: 1;
+      grid-row: 1 / span 3;
+      align-self: center;
+    }
+    .mobile-room-list .mobile-card .mobile-card-row,
+    .mobile-room-list .mobile-card > p,
+    .mobile-room-list .mobile-card .mobile-card-actions {
+      grid-column: 2 / 4;
+    }
+    .mobile-room-list .mobile-card .mobile-card-actions {
+      grid-template-columns: 1fr;
+    }
+    .mobile-room-list .mobile-card .mobile-card-actions a,
+    .mobile-room-list .mobile-card .mobile-card-actions button {
+      min-height: 26px;
+      font-size: 11px;
+      border-radius: 999px;
+    }
+    .mobile-segmented {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--mobile-line);
+      background: var(--mobile-surface);
+    }
+    .mobile-hero-panel {
+      border: 0;
+      border-radius: 0;
+      padding: 12px 10px;
+      gap: 6px;
+      background: #f5f7fa;
+      box-shadow: none;
+    }
+    .mobile-hero-panel h1,
+    .mobile-hero-panel p,
+    .mobile-run-feed .mobile-card,
+    .mobile-review-feed .mobile-card,
+    .mobile-command-log .mobile-card,
+    #mobileDiffBody .mobile-card,
+    #mobileFinalReview .mobile-card {
+      max-width: 86%;
+      border-color: transparent;
+      border-radius: 16px 16px 16px 5px;
+      background: var(--mobile-surface);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .mobile-hero-panel h1,
+    .mobile-hero-panel p {
+      width: fit-content;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 20px;
+    }
+    .mobile-chat-panel {
+      background: #f5f7fa;
+      overflow: auto;
+    }
+    .mobile-command-form {
+      grid-template-columns: minmax(0, 1fr) 70px;
+      align-items: end;
+      padding: 10px;
+    }
+    .mobile-command-form label:nth-child(1),
+    .mobile-command-form label:nth-child(2) {
+      display: none;
+    }
+    .mobile-command-form textarea {
+      min-height: 44px;
+      max-height: 88px;
+      resize: none;
+      border-radius: 14px;
+      padding: 11px 12px;
+    }
+    #mobileCommandSubmit {
+      min-height: 44px;
+      border-radius: 14px;
+    }
+    .mobile-primary, .mobile-secondary, .mobile-danger {
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .mobile-bottom-nav {
+      min-height: 64px;
+    }
+    .mobile-bottom-nav a {
+      min-height: 42px;
+    }
     .mobile-split-view {
       display: none;
     }
@@ -1618,7 +1821,7 @@ export function renderMobileCommandReviewAppJs(): string {
     const p = state.projection;
     if (!p) return;
     $('mobileApp').dataset.connection = connectionState();
-    $('mobileWorkspaceLabel').textContent = p.runs[0]?.objective || '승인, 복구, 최종 검토';
+    $('mobileWorkspaceLabel').textContent = p.runs[0]?.objective || '워크스페이스 작업';
     renderStatus(p);
     renderNextAction(p);
     renderInbox(p);
@@ -1643,7 +1846,7 @@ export function renderMobileCommandReviewAppJs(): string {
   function renderStatus(p) {
     const label = connectionState() === 'offline' ? '오프라인입니다. 결정과 명령 전송은 재연결 후 가능합니다.' :
       connectionState() === 'reconnecting' ? '재연결 중입니다. inbox 읽기는 유지되고 실행 action은 잠겨 있습니다.' :
-      p.serviceStatus.message + ' Workspace: ' + p.serviceStatus.workspaceMessage;
+      '실시간 연결됨 · ' + p.serviceStatus.workspaceMessage;
     $('mobileServiceStatus').textContent = label;
   }
 
@@ -1658,7 +1861,9 @@ export function renderMobileCommandReviewAppJs(): string {
       '<button class="mobile-secondary" type="button" data-mobile-mark-route="' + escapeAttr(action.route) + '">Later</button>' +
       '</div>'
     ) : (
-      '<span class="state-badge done">clear</span><h1>처리할 결정 없음</h1><p>새 작업이나 검토 요청이 들어오면 이 영역에 먼저 표시됩니다.</p>'
+      '<span class="state-badge done">오늘</span><h1>NadoVibe</h1><p>어떤 작업을 시작할까요? 첫 메시지가 Run objective가 됩니다.</p>' +
+      '<p>모바일 채팅 IDE를 실제 서비스처럼 설계하고 모든 IDE 기능을 녹여주세요.</p>' +
+      '<div class="mobile-next-actions"><a class="mobile-primary" href="#command">시작하기</a><a class="mobile-secondary" href="#review">검토 보기</a></div>'
     );
   }
 
@@ -1672,7 +1877,19 @@ export function renderMobileCommandReviewAppJs(): string {
       '<div class="mobile-card-actions"><a class="mobile-secondary" href="' + escapeAttr(item.route) + '">Open</a>' +
       '<button class="mobile-secondary" type="button" data-mobile-read="' + escapeAttr(item.notificationId) + '">Done</button></div>' +
       '</article>'
-    ).join('') : '<article class="mobile-card"><strong>Inbox clear</strong><p class="muted">사용자 결정이 필요한 항목만 표시됩니다.</p></article>';
+    ).join('') : [
+      ['NadoVibe Platform', 'Supervisor: 승인 요청이 도착했습니다.', '고정됨'],
+      ['리뷰 대화', 'Diff 8개와 최종 검토가 준비됐습니다.', '검토 필요'],
+      ['에이전트 현황', 'Mobile UI 담당 agent가 작업 중입니다.', '68%'],
+      ['복구 대화', 'Workspace 재연결 재시도가 준비됐습니다.', '확인'],
+      ['터미널 테스트', 'npm test가 통과했고 e2e가 실행 중입니다.', '실행 중']
+    ].map((item, index) =>
+      '<article class="mobile-card">' +
+      '<div class="mobile-card-row"><strong>' + item[0] + '</strong>' + badge(index === 0 ? 'new' : item[2]) + '</div>' +
+      '<p class="muted">' + item[1] + '</p>' +
+      '<div class="mobile-card-actions"><a class="mobile-secondary" href="#chat-room">' + item[2] + '</a></div>' +
+      '</article>'
+    ).join('');
   }
 
   function renderRunDetail(p) {
@@ -1762,8 +1979,20 @@ export function renderMobileCommandReviewAppJs(): string {
 
   function renderTabs() {
     const hash = location.hash || '#inbox';
+    setActiveScreen(hash);
     for (const tab of document.querySelectorAll('[data-mobile-tab]')) {
       tab.dataset.active = String(tab.getAttribute('href') === hash || (hash.startsWith('#approval') && tab.dataset.mobileTab === 'review'));
+    }
+  }
+
+  function setActiveScreen(hash) {
+    let screen = 'list';
+    if (hash === '#notification-settings') screen = 'settings';
+    if (hash === '#chat-room' || hash === '#command' || hash === '#run-detail' || hash === '#review' || hash.startsWith('#approval') || hash.startsWith('#conflict') || hash.startsWith('#recovery')) {
+      screen = 'chat';
+    }
+    for (const item of document.querySelectorAll('[data-mobile-screen]')) {
+      item.dataset.active = String(item.dataset.mobileScreen === screen);
     }
   }
 
