@@ -32,8 +32,12 @@ const server = http.createServer(async (request, response) => {
     send(response, 200, "text/html; charset=utf-8", renderTabletWorkbenchHtml(), noStoreHeaders());
     return;
   }
-  if (url.pathname === "/mobile" || (url.pathname === "/" && isMobileUserAgent(request))) {
+  if (url.pathname === "/" || url.pathname === "/mobile") {
     send(response, 200, "text/html; charset=utf-8", renderMobileCommandReviewHtml(), noStoreHeaders());
+    return;
+  }
+  if (url.pathname === "/control-room") {
+    send(response, 200, "text/html; charset=utf-8", renderControlRoomHtml(), noStoreHeaders());
     return;
   }
   if (url.pathname === "/assets/gateway-client.js") {
@@ -85,11 +89,6 @@ function noStoreHeaders(): Record<string, string> {
     pragma: "no-cache",
     expires: "0"
   };
-}
-
-function isMobileUserAgent(request: http.IncomingMessage): boolean {
-  const userAgent = String(request.headers["user-agent"] ?? "");
-  return /Android|iPhone|iPad|Mobile/i.test(userAgent);
 }
 
 function renderCodeMirrorVendorJs(): Promise<string> {
