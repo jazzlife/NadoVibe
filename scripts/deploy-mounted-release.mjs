@@ -54,8 +54,11 @@ if (!planResponse.plan?.allowed) {
 const manifest = JSON.parse(readFileSync(join(String(prepared.releaseDir), "nadovibe.release.json"), "utf8"));
 syncReleaseToCurrent(String(prepared.releaseDir), currentDir);
 const restarted = await restartPlannedServices(planResponse.plan, manifest);
-
-if (planResponse.plan.restartGroups?.some((group) => group.services?.includes("deployment-agent"))) {
+if (!restarted.includes("deployment-agent")) {
+  restartComposeService("deployment-agent");
+  restarted.push("deployment-agent");
+}
+if (restarted.includes("deployment-agent")) {
   await waitForHttp(`${deploymentAgentUrl}/healthz`);
 }
 
