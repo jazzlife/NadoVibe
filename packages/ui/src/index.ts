@@ -376,6 +376,16 @@ export function renderMobileCommandReviewHtml(): string {
         </div>
       </section>
     </div>
+    <section id="mobileSplitView" class="mobile-split-view" aria-label="Mobile tablet split layout">
+      <section class="mobile-split-slot" data-split-slot="conversation" aria-label="Conversation split slot">
+        <strong>Conversation</strong>
+        <span>패드 splitview 채팅 영역</span>
+      </section>
+      <section class="mobile-split-slot" data-split-slot="workspace" aria-label="Workspace split slot">
+        <strong>Workspace</strong>
+        <span>패드 splitview IDE 영역</span>
+      </section>
+    </section>
   </div>
   <script src="/assets/gateway-client.js"></script>
   <script src="/assets/mobile-command-review.js"></script>
@@ -1282,9 +1292,66 @@ export function renderMobileCommandReviewCss(): string {
       padding: 16px;
       border: 1px solid #bfe7df;
     }
+    .mobile-split-view {
+      display: none;
+    }
+    .mobile-split-slot {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      place-content: center;
+      gap: 6px;
+      border: 1px dashed #b4c6c0;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #134e4a;
+      text-align: center;
+    }
+    .mobile-split-slot strong {
+      font-size: 15px;
+      line-height: 20px;
+    }
+    .mobile-split-slot span {
+      color: #66736f;
+      font-size: 12px;
+      line-height: 18px;
+    }
     @media (min-width: 481px) {
       body { background: #d9f7f1; }
       .mobile-shell { border-left: 1px solid #bfe7df; border-right: 1px solid #bfe7df; }
+    }
+    @media (min-width: 700px) {
+      body { background: #f2f4f6; }
+      .mobile-shell {
+        width: 100vw;
+        max-width: none;
+        height: 100vh;
+        min-height: 100vh;
+        grid-template-rows: minmax(0, 1fr);
+        padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+        border: 0;
+        background: #f2f4f6;
+        overflow: hidden;
+      }
+      .mobile-topbar, .mobile-status-strip, .mobile-main, .mobile-bottom-nav {
+        display: none;
+      }
+      .mobile-split-view {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.18fr);
+        gap: 10px;
+        overflow: hidden;
+      }
+      .mobile-confirm-backdrop {
+        align-items: center;
+      }
+    }
+    @media (min-width: 700px) and (max-width: 980px) {
+      .mobile-split-view {
+        grid-template-columns: minmax(236px, 0.9fr) minmax(0, 1.1fr);
+        gap: 8px;
+      }
     }
   `;
 }

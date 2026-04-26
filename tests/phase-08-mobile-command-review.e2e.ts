@@ -104,3 +104,28 @@ for (const width of [390, 430, 480]) {
     await page.screenshot({ path: `${artifactDir}/phase-08-mobile-command-${width}.png`, fullPage: true });
   });
 }
+
+test("phase 8 mobile tablet breakpoint switches from singleview to splitview shell", async ({ page, request, baseURL }) => {
+  const gatewayBase = process.env.GATEWAY_BASE_URL ?? "http://127.0.0.1:18080";
+  const seed = await request.post(`${gatewayBase}/api/dev/seed`, {
+    data: { tenantId: "tenant_dev", userId: "user_dev", workspaceId: "workspace_dev", repositoryId: "repo_nadovibe" }
+  });
+  expect(seed.ok()).toBe(true);
+
+  await page.setViewportSize({ width: 900, height: 844 });
+  await page.goto(`${baseURL}/mobile`);
+  await expect(page.locator("#mobileSplitView")).toBeVisible();
+  await expect(page.locator(".mobile-topbar")).toBeHidden();
+  await expect(page.locator(".mobile-main")).toBeHidden();
+  await expect(page.locator('[data-split-slot="conversation"]')).toBeVisible();
+  await expect(page.locator('[data-split-slot="workspace"]')).toBeVisible();
+
+  const metrics = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+    splitColumns: getComputedStyle(document.querySelector("#mobileSplitView") as Element).gridTemplateColumns.split(" ").length
+  }));
+  expect(metrics.scrollWidth).toBe(metrics.clientWidth);
+  expect(metrics.splitColumns).toBe(2);
+  await page.screenshot({ path: `${artifactDir}/phase-08-mobile-splitview-900.png`, fullPage: true });
+});
