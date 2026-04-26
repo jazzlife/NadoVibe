@@ -32,7 +32,8 @@ test("phase 8 mobile Command Review handles approval, conflict, recovery, comman
   await context.grantPermissions(["notifications"], { origin: new URL(baseURL ?? "http://127.0.0.1:15173").origin });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseURL}/mobile#approval-${approvalId}`);
-  await expect(page.locator(".mobile-topbar").getByText("Mobile Command", { exact: true })).toBeVisible();
+  await expect(page.locator(".mobile-topbar").getByText("NadoVibe", { exact: true })).toBeVisible();
+  await expect(page.locator("#mobileApp")).toHaveAttribute("data-storyboard", "mobile-chat-ide-complete-storyboard");
   await expect(page.locator("#mobileNextAction")).toContainText("승인");
   await expect(page.locator(`#approval-${approvalId}`)).toBeVisible();
 

@@ -285,105 +285,138 @@ export function renderMobileCommandReviewHtml(): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0F3F3B" />
+  <meta name="theme-color" content="#3182f6" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <title>NadoVibe Mobile Command</title>
+  <title>NadoVibe Mobile Chat IDE</title>
   <style>${renderShellCss()}${renderMobileCommandReviewCss()}</style>
 </head>
 <body>
-  <a class="skip-link" href="#mobileMain">Skip to mobile command surface</a>
-  <div id="mobileApp" class="mobile-shell" data-connection="connected">
+  <a class="skip-link" href="#mobileMain">Skip to mobile chat IDE</a>
+  <div id="mobileApp" class="mobile-shell mobile-chat-ide-complete-storyboard" data-storyboard="mobile-chat-ide-complete-storyboard" data-device="galaxy-s24-ultra" data-connection="connected">
     <header class="mobile-topbar" aria-label="Mobile command header">
-      <div class="brand-lockup">
-        <span class="brand-mark" aria-hidden="true">NV</span>
-        <div>
-          <strong>Mobile Command</strong>
-          <span id="mobileWorkspaceLabel">승인, 복구, 최종 검토</span>
-        </div>
+      <button class="mobile-icon-button mobile-menu-button" type="button" aria-label="채팅 목록">
+        <span aria-hidden="true">‹</span>
+      </button>
+      <div class="mobile-room-title">
+        <strong>NadoVibe</strong>
+        <span id="mobileWorkspaceLabel">채팅 IDE</span>
       </div>
-      <button id="registerPushButton" class="mobile-icon-button" type="button" aria-label="Register mobile notifications">
+      <button id="registerPushButton" class="mobile-icon-button" type="button" aria-label="알림 설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 0 1-6 0" /></svg>
       </button>
     </header>
-    <section id="mobileServiceStatus" class="mobile-status-strip" role="status">연결 상태를 확인하고 있습니다.</section>
-    <main id="mobileMain" class="mobile-main">
-      <section id="mobileNextAction" class="mobile-hero-panel" aria-label="Next action"></section>
-      <nav class="mobile-segmented" aria-label="Mobile review filters">
-        <a href="#inbox" data-mobile-tab="inbox">Inbox</a>
-        <a href="#run-detail" data-mobile-tab="run">Run</a>
-        <a href="#review" data-mobile-tab="review">Review</a>
-        <a href="#notification-settings" data-mobile-tab="notify">Notify</a>
-      </nav>
-      <section id="inbox" class="mobile-section">
-        <div class="mobile-section-heading"><h2>Inbox</h2><span id="mobileInboxCount" class="count-badge">0</span></div>
-        <div id="mobileInboxList" class="mobile-list"></div>
+    <section id="mobileServiceStatus" class="mobile-status-strip" role="status">실서버 연결 상태를 확인하고 있습니다.</section>
+    <main id="mobileMain" class="mobile-main" aria-label="mobile-chat-ide-complete-storyboard">
+      <section id="chat-list" class="mobile-section mobile-chat-list-screen" aria-label="채팅 리스트 화면">
+        <span id="inbox" class="mobile-anchor" aria-hidden="true"></span>
+        <div class="mobile-section-heading">
+          <div>
+            <span class="mobile-kicker">Chats</span>
+            <h2>작업 대화</h2>
+          </div>
+          <span id="mobileInboxCount" class="count-badge">0</span>
+        </div>
+        <div class="mobile-search-row" aria-label="채팅 검색">
+          <span aria-hidden="true">⌕</span>
+          <strong>워크스페이스, run, 승인 검색</strong>
+        </div>
+        <div id="mobileInboxList" class="mobile-list mobile-room-list"></div>
       </section>
-      <section id="run-detail" class="mobile-section">
-        <div class="mobile-section-heading"><h2>Run Detail</h2></div>
-        <div id="mobileRunDetail" class="mobile-list"></div>
-        <div id="mobileAgentRoster" class="mobile-list"></div>
+
+      <section id="chat-room" class="mobile-section mobile-chat-room-screen" aria-label="채팅 화면">
+        <div class="mobile-section-heading mobile-chat-heading">
+          <div>
+            <span class="mobile-kicker">Singleview</span>
+            <h2>에이전트 채팅 IDE</h2>
+          </div>
+          <span class="state-badge live">live</span>
+        </div>
+        <nav class="mobile-segmented" aria-label="Mobile chat filters">
+          <a href="#inbox" data-mobile-tab="inbox">대화</a>
+          <a href="#run-detail" data-mobile-tab="run">Run</a>
+          <a href="#review" data-mobile-tab="review">검토</a>
+          <a href="#notification-settings" data-mobile-tab="notify">설정</a>
+        </nav>
+        <div id="mobileNextAction" class="mobile-hero-panel mobile-message-thread" aria-label="다음 액션 메시지"></div>
+        <section id="run-detail" class="mobile-chat-panel">
+          <div class="mobile-panel-label">실행 상태</div>
+          <div id="mobileRunDetail" class="mobile-list mobile-run-feed"></div>
+          <div id="mobileAgentRoster" class="mobile-list mobile-agent-strip"></div>
+        </section>
+        <section id="review" class="mobile-chat-panel">
+          <div class="mobile-panel-label">리뷰 큐</div>
+          <div id="mobileApprovalReview" class="mobile-list mobile-review-feed"></div>
+          <div id="mobileConflictReview" class="mobile-list mobile-review-feed"></div>
+          <div id="mobileRecoveryDecision" class="mobile-list mobile-review-feed"></div>
+          <details id="mobileDiffSummary" class="mobile-details" open>
+            <summary>변경 diff 요약</summary>
+            <div id="mobileDiffBody"></div>
+          </details>
+          <div id="mobileFinalReview" class="mobile-list mobile-review-feed"></div>
+        </section>
+        <section id="command" class="mobile-chat-composer" aria-label="채팅 명령 입력">
+          <form id="mobileQuickCommandForm" class="mobile-command-form">
+            <label><span>템플릿</span><select id="mobileCommandTemplate">
+              <option value="검증 결과를 요약해 보고하십시오">검증 요약</option>
+              <option value="현재 blocker를 정리하고 다음 action을 제안하십시오">Blocker 정리</option>
+              <option value="승인 전 위험 변경을 다시 확인하십시오">위험 변경 확인</option>
+            </select></label>
+            <label><span>Run</span><select id="mobileCommandRun"></select></label>
+            <label><span>메시지</span><textarea id="mobileCommandText" rows="3" placeholder="에이전트에게 보낼 지시를 입력하세요"></textarea></label>
+            <button id="mobileCommandSubmit" class="mobile-primary" type="submit">전송</button>
+          </form>
+          <div id="mobileCommandLog" class="mobile-list mobile-command-log"></div>
+        </section>
       </section>
-      <section id="review" class="mobile-section">
-        <div class="mobile-section-heading"><h2>Review</h2></div>
-        <div id="mobileApprovalReview" class="mobile-list"></div>
-        <div id="mobileConflictReview" class="mobile-list"></div>
-        <div id="mobileRecoveryDecision" class="mobile-list"></div>
-        <details id="mobileDiffSummary" class="mobile-details" open>
-          <summary>Diff Summary</summary>
-          <div id="mobileDiffBody"></div>
-        </details>
-        <div id="mobileFinalReview" class="mobile-list"></div>
-      </section>
-      <section id="command" class="mobile-section">
-        <div class="mobile-section-heading"><h2>Quick Command</h2></div>
-        <form id="mobileQuickCommandForm" class="mobile-command-form">
-          <label><span>Template</span><select id="mobileCommandTemplate">
-            <option value="검증 결과를 요약해 보고하십시오">검증 요약</option>
-            <option value="현재 blocker를 정리하고 다음 action을 제안하십시오">Blocker 정리</option>
-            <option value="승인 전 위험 변경을 다시 확인하십시오">위험 변경 확인</option>
-          </select></label>
-          <label><span>Target run</span><select id="mobileCommandRun"></select></label>
-          <label><span>Free text</span><textarea id="mobileCommandText" rows="3" placeholder="추가 지시를 입력하십시오"></textarea></label>
-          <button id="mobileCommandSubmit" class="mobile-primary" type="submit">Send Command</button>
-        </form>
-        <div id="mobileCommandLog" class="mobile-list"></div>
-      </section>
-      <section id="notification-settings" class="mobile-section">
-        <div class="mobile-section-heading"><h2>Notification Settings</h2><span id="mobileNotificationState" class="state-badge">ready</span></div>
-        <form id="mobileNotificationSettings" class="mobile-settings-form">
-          <label><input id="notifyEnabled" type="checkbox" /> Enable mobile inbox alerts</label>
-          <label><input id="notifyApprovals" type="checkbox" /> Approval review</label>
-          <label><input id="notifyRecovery" type="checkbox" /> Recovery decisions</label>
-          <label><input id="notifyFinal" type="checkbox" /> Final review</label>
-          <label><input id="notifyQuiet" type="checkbox" /> Quiet background scheduling</label>
-          <button class="mobile-secondary" type="submit">Save Settings</button>
-        </form>
+
+      <section id="notification-settings" class="mobile-section mobile-settings-screen" aria-label="설정 다이얼로그 화면">
+        <div class="mobile-settings-dialog">
+          <div class="mobile-section-heading">
+            <div>
+              <span class="mobile-kicker">Dialog</span>
+              <h2>채팅 IDE 설정</h2>
+            </div>
+            <span id="mobileNotificationState" class="state-badge">ready</span>
+          </div>
+          <form id="mobileNotificationSettings" class="mobile-settings-form">
+            <label><input id="notifyEnabled" type="checkbox" /> 모바일 채팅 알림</label>
+            <label><input id="notifyApprovals" type="checkbox" /> 승인 요청</label>
+            <label><input id="notifyRecovery" type="checkbox" /> 복구 결정</label>
+            <label><input id="notifyFinal" type="checkbox" /> 최종 리뷰</label>
+            <label><input id="notifyQuiet" type="checkbox" /> 무거운 작업 조용히 처리</label>
+            <button class="mobile-secondary" type="submit">설정 저장</button>
+          </form>
+        </div>
       </section>
     </main>
     <nav class="mobile-bottom-nav" aria-label="Thumb navigation">
-      <a href="#inbox">Inbox</a>
-      <a href="#run-detail">Run</a>
-      <a href="#review">Review</a>
-      <a href="#command">Command</a>
+      <a href="#chat-list">채팅</a>
+      <a href="#chat-room">IDE</a>
+      <a href="#review">검토</a>
+      <a href="#notification-settings">설정</a>
     </nav>
     <div id="mobileConfirmSheet" class="mobile-confirm-backdrop" hidden>
       <section class="mobile-confirm-sheet" role="dialog" aria-modal="true" aria-labelledby="mobileConfirmTitle">
         <h2 id="mobileConfirmTitle">확인이 필요합니다</h2>
         <p id="mobileConfirmBody">이 action을 실행하시겠습니까?</p>
         <div class="mobile-confirm-actions">
-          <button id="mobileConfirmCancel" class="mobile-secondary" type="button">Cancel</button>
-          <button id="mobileConfirmApply" class="mobile-danger" type="button">Confirm</button>
+          <button id="mobileConfirmCancel" class="mobile-secondary" type="button">취소</button>
+          <button id="mobileConfirmApply" class="mobile-danger" type="button">확인</button>
         </div>
       </section>
     </div>
     <section id="mobileSplitView" class="mobile-split-view" aria-label="Mobile tablet split layout">
-      <section class="mobile-split-slot" data-split-slot="conversation" aria-label="Conversation split slot">
-        <strong>Conversation</strong>
-        <span>패드 splitview 채팅 영역</span>
+      <section class="mobile-split-slot mobile-split-conversation" data-split-slot="conversation" aria-label="Conversation split slot">
+        <div>
+          <strong>대화</strong>
+          <span>tablet splitview 전환 지점</span>
+        </div>
       </section>
-      <section class="mobile-split-slot" data-split-slot="workspace" aria-label="Workspace split slot">
-        <strong>Workspace</strong>
-        <span>패드 splitview IDE 영역</span>
+      <section class="mobile-split-slot mobile-split-workspace" data-split-slot="workspace" aria-label="Workspace split slot">
+        <div>
+          <strong>IDE</strong>
+          <span>cursor형 splitview는 다음 단계에서 새 디자인 적용</span>
+        </div>
       </section>
     </section>
   </div>
@@ -1034,40 +1067,84 @@ export function renderTabletWorkbenchCss(): string {
 
 export function renderMobileCommandReviewCss(): string {
   return `
+    :root {
+      --mobile-blue: #3182f6;
+      --mobile-blue-press: #2272eb;
+      --mobile-blue-soft: #e8f3ff;
+      --mobile-bg: #f9fafb;
+      --mobile-surface: #ffffff;
+      --mobile-surface-2: #f2f4f6;
+      --mobile-line: #e5e8eb;
+      --mobile-text: #191f28;
+      --mobile-text-2: #4e5968;
+      --mobile-muted: #8b95a1;
+      --mobile-green: #03b26c;
+      --mobile-red: #f04452;
+      --mobile-orange: #fe9800;
+    }
     .mobile-shell {
       min-height: 100vh;
       display: grid;
       grid-template-rows: auto auto minmax(0, 1fr) 72px;
-      gap: 10px;
-      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
-      background: #f0fdfa;
-      max-width: 480px;
+      gap: 8px;
+      padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+      background: var(--mobile-bg);
+      max-width: 430px;
       margin: 0 auto;
+      color: var(--mobile-text);
+      font-family: "Toss Product Sans", "Tossface", "SF Pro KR", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", Roboto, "Noto Sans KR", sans-serif;
     }
     .mobile-topbar {
-      min-height: 64px;
-      display: flex;
+      min-height: 56px;
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 44px;
       align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: #0f3f3b;
-      color: var(--inverse);
+      gap: 8px;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--mobile-line);
+      background: rgba(255,255,255,0.92);
+      color: var(--mobile-text);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 8;
+    }
+    .mobile-room-title {
+      min-width: 0;
+      display: grid;
+      justify-items: center;
+      gap: 1px;
+      text-align: center;
+    }
+    .mobile-room-title strong {
+      font-size: 16px;
+      line-height: 22px;
+      font-weight: 700;
+    }
+    .mobile-room-title span {
+      max-width: 100%;
+      color: var(--mobile-muted);
+      font-size: 11px;
+      line-height: 15px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .mobile-icon-button {
-      width: 48px;
-      height: 48px;
-      border: 1px solid #23756d;
-      border-radius: 8px;
+      width: 44px;
+      height: 44px;
+      border: 0;
+      border-radius: 12px;
       display: grid;
       place-items: center;
-      background: #155b55;
-      color: var(--inverse);
+      background: var(--mobile-surface-2);
+      color: var(--mobile-text);
+      font-size: 26px;
+      font-weight: 600;
     }
     .mobile-icon-button svg {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       stroke: currentColor;
       fill: none;
       stroke-width: 2;
@@ -1075,111 +1152,191 @@ export function renderMobileCommandReviewCss(): string {
       stroke-linejoin: round;
     }
     .mobile-status-strip {
-      min-height: 44px;
+      min-height: 34px;
       display: flex;
       align-items: center;
-      padding: 0 12px;
-      border: 1px solid #bfe7df;
+      padding: 0 10px;
+      border: 1px solid var(--mobile-line);
       border-radius: 8px;
-      background: #ffffff;
-      color: #134e4a;
-      font-size: 12px;
-      font-weight: 700;
+      background: var(--mobile-blue-soft);
+      color: var(--mobile-blue);
+      font-size: 11px;
+      font-weight: 600;
       overflow-wrap: anywhere;
     }
     .mobile-shell[data-connection="offline"] .mobile-status-strip {
-      border-color: color-mix(in srgb, var(--red) 32%, white);
+      border-color: color-mix(in srgb, var(--mobile-red) 32%, white);
       background: #fef2f2;
-      color: var(--red);
+      color: var(--mobile-red);
     }
     .mobile-shell[data-connection="reconnecting"] .mobile-status-strip {
-      border-color: color-mix(in srgb, var(--amber) 32%, white);
+      border-color: color-mix(in srgb, var(--mobile-orange) 32%, white);
       background: #fff7ed;
-      color: var(--amber);
+      color: var(--mobile-orange);
     }
     .mobile-main {
       min-height: 0;
       overflow: auto;
       display: grid;
-      gap: 10px;
+      gap: 8px;
       scroll-behavior: smooth;
-      padding-bottom: 4px;
+      padding-bottom: 6px;
     }
     .mobile-hero-panel, .mobile-section, .mobile-details {
-      border: 1px solid #bfe7df;
+      border: 1px solid var(--mobile-line);
       border-radius: 8px;
-      background: #ffffff;
-      color: #134e4a;
+      background: var(--mobile-surface);
+      color: var(--mobile-text);
       min-width: 0;
+      overflow: hidden;
+    }
+    .mobile-chat-list-screen, .mobile-chat-room-screen, .mobile-settings-screen {
+      scroll-margin-top: 72px;
+    }
+    .mobile-anchor {
+      position: relative;
+      top: -72px;
+      display: block;
+      width: 1px;
+      height: 1px;
       overflow: hidden;
     }
     .mobile-hero-panel {
       display: grid;
-      gap: 10px;
-      padding: 14px;
+      gap: 8px;
+      padding: 10px;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
     }
     .mobile-hero-panel h1 {
-      font-size: 22px;
-      line-height: 1.15;
+      max-width: 86%;
+      width: fit-content;
+      padding: 10px 12px;
+      border-radius: 16px 16px 16px 4px;
+      background: var(--mobile-surface-2);
+      font-size: 15px;
+      line-height: 21px;
+      font-weight: 700;
     }
-    .mobile-hero-panel p { color: #5b716d; line-height: 1.45; }
+    .mobile-hero-panel p {
+      max-width: 92%;
+      width: fit-content;
+      padding: 10px 12px;
+      border-radius: 16px 16px 16px 4px;
+      background: var(--mobile-surface-2);
+      color: var(--mobile-text-2);
+      line-height: 1.45;
+      font-size: 13px;
+    }
     .mobile-next-actions, .mobile-card-actions, .mobile-confirm-actions {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 8px;
     }
     .mobile-segmented {
-      min-height: 50px;
+      min-height: 42px;
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
+      gap: 4px;
+      padding: 6px 8px 0;
     }
     .mobile-segmented a, .mobile-bottom-nav a {
-      min-height: 48px;
-      border-radius: 999px;
+      min-height: 38px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid #bfe7df;
-      background: #ffffff;
-      color: #134e4a;
+      border: 1px solid var(--mobile-line);
+      background: var(--mobile-surface);
+      color: var(--mobile-text-2);
       text-decoration: none;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 600;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     .mobile-segmented a[data-active="true"] {
-      background: #0f3f3b;
-      color: var(--inverse);
-      border-color: #0f3f3b;
+      background: var(--mobile-blue-soft);
+      color: var(--mobile-blue);
+      border-color: #c9e2ff;
     }
     .mobile-section-heading {
-      min-height: 48px;
+      min-height: 52px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
       padding: 0 12px;
-      border-bottom: 1px solid #bfe7df;
-      background: #ccfbf1;
+      border-bottom: 1px solid var(--mobile-line);
+      background: var(--mobile-surface);
     }
-    .mobile-section-heading h2 { font-size: 14px; }
+    .mobile-section-heading h2 { font-size: 16px; line-height: 22px; }
+    .mobile-kicker, .mobile-panel-label {
+      color: var(--mobile-muted);
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 600;
+    }
+    .mobile-panel-label {
+      padding: 10px 10px 0;
+    }
+    .mobile-search-row {
+      min-height: 42px;
+      margin: 8px 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border-radius: 12px;
+      background: var(--mobile-surface-2);
+      color: var(--mobile-muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
     .mobile-list {
       display: grid;
-      gap: 8px;
-      padding: 10px;
+      gap: 6px;
+      padding: 8px;
     }
     .mobile-card {
       min-height: 48px;
       display: grid;
-      gap: 8px;
+      gap: 6px;
       padding: 10px;
-      border: 1px solid #bfe7df;
+      border: 1px solid var(--mobile-line);
       border-radius: 8px;
-      background: #ffffff;
+      background: var(--mobile-surface);
       min-width: 0;
+    }
+    .mobile-room-list .mobile-card {
+      grid-template-columns: minmax(0, 1fr);
+      border-color: transparent;
+      border-bottom-color: var(--mobile-line);
+      border-radius: 0;
+      padding: 10px 4px;
+    }
+    .mobile-room-list .mobile-card::before {
+      content: "";
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--mobile-blue), #18a5a5);
+      grid-row: 1 / span 2;
+      align-self: center;
+      display: block;
+      float: left;
+    }
+    .mobile-chat-panel {
+      border-top: 1px solid var(--mobile-line);
+      background: #fbfcfd;
+    }
+    .mobile-chat-composer {
+      position: sticky;
+      bottom: 0;
+      z-index: 5;
+      border-top: 1px solid var(--mobile-line);
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(14px);
     }
     .mobile-card strong, .mobile-card p, .mobile-card span { min-width: 0; overflow-wrap: anywhere; }
     .mobile-card-row {
@@ -1190,8 +1347,8 @@ export function renderMobileCommandReviewCss(): string {
       min-width: 0;
     }
     .mobile-primary, .mobile-secondary, .mobile-danger {
-      min-height: 48px;
-      border-radius: 6px;
+      min-height: 44px;
+      border-radius: 8px;
       border: 1px solid transparent;
       display: inline-flex;
       align-items: center;
@@ -1202,9 +1359,10 @@ export function renderMobileCommandReviewCss(): string {
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .mobile-primary { background: #f97316; color: #ffffff; }
-    .mobile-secondary { background: #ccfbf1; color: #134e4a; border-color: #bfe7df; }
-    .mobile-danger { background: #b43c3c; color: #ffffff; }
+    .mobile-primary { background: var(--mobile-blue); color: #ffffff; }
+    .mobile-primary:active { background: var(--mobile-blue-press); }
+    .mobile-secondary { background: var(--mobile-blue-soft); color: var(--mobile-blue); border-color: #c9e2ff; }
+    .mobile-danger { background: var(--mobile-red); color: #ffffff; }
     .mobile-primary:disabled, .mobile-secondary:disabled, .mobile-danger:disabled {
       cursor: not-allowed;
       opacity: 0.56;
@@ -1213,13 +1371,15 @@ export function renderMobileCommandReviewCss(): string {
       padding: 0;
     }
     .mobile-details summary {
-      min-height: 48px;
+      min-height: 44px;
       display: flex;
       align-items: center;
       padding: 0 12px;
       cursor: pointer;
-      font-weight: 700;
-      background: #ccfbf1;
+      font-weight: 600;
+      background: var(--mobile-surface);
+      border-top: 1px solid var(--mobile-line);
+      border-bottom: 1px solid var(--mobile-line);
     }
     #mobileDiffBody {
       display: grid;
@@ -1228,29 +1388,46 @@ export function renderMobileCommandReviewCss(): string {
     }
     .mobile-command-form, .mobile-settings-form {
       display: grid;
-      gap: 10px;
-      padding: 10px;
+      gap: 8px;
+      padding: 8px;
+    }
+    .mobile-command-form label {
+      display: grid;
+      gap: 4px;
+      color: var(--mobile-muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .mobile-command-form select {
+      min-height: 38px;
+      width: 100%;
+      border: 1px solid var(--mobile-line);
+      border-radius: 8px;
+      padding: 0 10px;
+      background: var(--mobile-surface-2);
+      color: var(--mobile-text);
     }
     .mobile-command-form textarea {
       width: 100%;
-      min-height: 92px;
+      min-height: 76px;
       resize: vertical;
-      border: 1px solid #bfe7df;
-      border-radius: 6px;
+      border: 1px solid var(--mobile-line);
+      border-radius: 10px;
       padding: 10px;
-      color: #134e4a;
+      color: var(--mobile-text);
+      background: var(--mobile-surface-2);
     }
     .mobile-settings-form label {
-      min-height: 48px;
+      min-height: 46px;
       display: flex;
       align-items: center;
       gap: 10px;
-      border: 1px solid #bfe7df;
+      border: 1px solid var(--mobile-line);
       border-radius: 8px;
-      background: #ffffff;
+      background: var(--mobile-surface);
       padding: 0 10px;
-      color: #134e4a;
-      font-weight: 700;
+      color: var(--mobile-text);
+      font-weight: 600;
     }
     .mobile-settings-form input[type="checkbox"] {
       width: 22px;
@@ -1261,16 +1438,22 @@ export function renderMobileCommandReviewCss(): string {
       min-height: 72px;
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-      padding: 8px;
-      border-radius: 8px;
-      background: #0f3f3b;
+      gap: 4px;
+      padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--mobile-line);
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(14px);
     }
     .mobile-bottom-nav a {
-      border-color: #23756d;
-      background: #155b55;
-      color: #f8fafc;
-      border-radius: 6px;
+      border-color: transparent;
+      background: transparent;
+      color: var(--mobile-muted);
+      border-radius: 8px;
+      min-height: 44px;
+    }
+    .mobile-bottom-nav a:focus, .mobile-bottom-nav a:hover {
+      color: var(--mobile-blue);
+      background: var(--mobile-blue-soft);
     }
     .mobile-confirm-backdrop {
       position: fixed;
@@ -1279,18 +1462,58 @@ export function renderMobileCommandReviewCss(): string {
       display: grid;
       align-items: end;
       padding: 12px;
-      background: rgba(15, 63, 59, 0.32);
+      background: rgba(2, 9, 19, 0.5);
     }
     .mobile-confirm-sheet {
-      width: min(480px, 100%);
+      width: min(430px, 100%);
       margin: 0 auto;
       display: grid;
       gap: 12px;
-      border-radius: 8px;
-      background: #ffffff;
-      color: #134e4a;
+      border-radius: 16px 16px 8px 8px;
+      background: var(--mobile-surface);
+      color: var(--mobile-text);
       padding: 16px;
-      border: 1px solid #bfe7df;
+      border: 1px solid var(--mobile-line);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+    }
+    .mobile-settings-dialog {
+      margin: 8px;
+      overflow: hidden;
+      border: 1px solid var(--mobile-line);
+      border-radius: 16px;
+      background: var(--mobile-surface);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .state-badge, .count-badge {
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: var(--mobile-surface-2);
+      color: var(--mobile-text-2);
+      font-size: 11px;
+      line-height: 16px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .state-badge.live, .state-badge.done, .state-badge.approved, .state-badge.clear, .state-badge.connected {
+      background: #e6f8f0;
+      color: var(--mobile-green);
+    }
+    .state-badge.requested, .state-badge.new, .count-badge {
+      background: var(--mobile-blue-soft);
+      color: var(--mobile-blue);
+    }
+    .state-badge.cancelled, .state-badge.rejected, .state-badge.failed {
+      background: #fff0f1;
+      color: var(--mobile-red);
+    }
+    .muted {
+      color: var(--mobile-muted);
+      font-size: 12px;
+      line-height: 18px;
     }
     .mobile-split-view {
       display: none;
@@ -1301,10 +1524,10 @@ export function renderMobileCommandReviewCss(): string {
       display: grid;
       place-content: center;
       gap: 6px;
-      border: 1px dashed #b4c6c0;
+      border: 1px solid var(--mobile-line);
       border-radius: 8px;
-      background: #ffffff;
-      color: #134e4a;
+      background: var(--mobile-surface);
+      color: var(--mobile-text);
       text-align: center;
     }
     .mobile-split-slot strong {
@@ -1312,13 +1535,13 @@ export function renderMobileCommandReviewCss(): string {
       line-height: 20px;
     }
     .mobile-split-slot span {
-      color: #66736f;
+      color: var(--mobile-muted);
       font-size: 12px;
       line-height: 18px;
     }
     @media (min-width: 481px) {
-      body { background: #d9f7f1; }
-      .mobile-shell { border-left: 1px solid #bfe7df; border-right: 1px solid #bfe7df; }
+      body { background: #f2f4f6; }
+      .mobile-shell { border-left: 1px solid var(--mobile-line); border-right: 1px solid var(--mobile-line); }
     }
     @media (min-width: 700px) {
       body { background: #f2f4f6; }
@@ -1543,7 +1766,7 @@ export function renderMobileCommandReviewAppJs(): string {
       runId: 'run_mobile_' + Date.now(),
       workspaceId: 'workspace_dev',
       repositoryId: 'repo_nadovibe',
-      objective: 'Mobile Command Review 작업',
+      objective: 'Mobile Chat IDE 작업',
       idempotencyKey: idempotency('mobile_run')
     });
     state.selectedRunId = result.runId;

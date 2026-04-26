@@ -24,11 +24,12 @@ test("phase 8 implementation defines the mobile command review contract", () => 
   const html = renderMobileCommandReviewHtml();
   const css = renderMobileCommandReviewCss();
 
-  assert.match(html, /NadoVibe Mobile Command/);
-  assert.match(css, /max-width: 480px/);
+  assert.match(html, /NadoVibe Mobile Chat IDE/);
+  assert.match(html, /mobile-chat-ide-complete-storyboard/);
+  assert.match(css, /max-width: 430px/);
   assert.match(css, /grid-template-rows: auto auto minmax\(0, 1fr\) 72px/);
-  assert.match(css, /width: 48px/);
-  assert.match(css, /height: 48px/);
+  assert.match(css, /width: 44px/);
+  assert.match(css, /height: 44px/);
 });
 
 test("mobile command review projection prioritizes next actions without internal resource terms", () => {
@@ -96,6 +97,8 @@ test("mobile shell includes required Phase 8 surfaces, push routing, and command
 
   for (const id of [
     "mobileNextAction",
+    "chat-list",
+    "chat-room",
     "mobileInboxList",
     "mobileRunDetail",
     "mobileAgentRoster",
@@ -112,8 +115,8 @@ test("mobile shell includes required Phase 8 surfaces, push routing, and command
   ]) {
     assert.match(html, new RegExp(`id="${id}"`));
   }
-  assert.match(css, /min-height: 48px/);
-  assert.match(css, /max-width: 480px/);
+  assert.match(css, /min-height: 44px/);
+  assert.match(css, /max-width: 430px/);
   assert.match(js, /getMobileReview/);
   assert.match(js, /registerMobilePush/);
   assert.match(js, /openConfirm/);
