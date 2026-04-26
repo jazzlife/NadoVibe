@@ -14,6 +14,11 @@ const gitSha = String(args["git-sha"] ?? run("git", ["rev-parse", "--short=12", 
 const changedPaths = args["changed-path"]
   ? values(args["changed-path"])
   : changedPathsSinceCurrentRelease(sourceRoot, runtimeRoot, gitSha);
+const currentDeployment = await readCurrentDeployment(deploymentAgentUrl);
+if (currentDeployment?.manifest?.gitSha === gitSha && currentDeployment.versionValidation?.ok === true && args.force !== true) {
+  process.stdout.write(JSON.stringify({ ok: true, skipped: true, reason: "release already active", gitSha }, null, 2) + "\n");
+  process.exit(0);
+}
 
 run("npm", ["run", "build"], sourceRoot, "inherit");
 
@@ -36,7 +41,12 @@ const prepareOutput = run(
 const prepared = JSON.parse(prepareOutput);
 const releaseId = String(prepared.releaseId);
 
-const planResponse = await postJson(`${deploymentAgentUrl}/v1/deployments/plan`, { releaseId, changedPaths });
+let plannedChangedPaths = changedPaths;
+let planResponse = await postJson(`${deploymentAgentUrl}/v1/deployments/plan`, { releaseId, changedPaths: plannedChangedPaths });
+if (planHasOnlyNoImpactedServices(planResponse.plan)) {
+  plannedChangedPaths = [];
+  planResponse = await postJson(`${deploymentAgentUrl}/v1/deployments/plan`, { releaseId, changedPaths: plannedChangedPaths });
+}
 if (!planResponse.plan?.allowed) {
   throw new Error(`deployment plan blocked: ${JSON.stringify(planResponse.plan?.issues ?? [])}`);
 }
@@ -61,7 +71,7 @@ process.stdout.write(JSON.stringify({
   ok: true,
   releaseId,
   gitSha,
-  changedPaths,
+  changedPaths: plannedChangedPaths,
   restarted,
   versionValidation: current.versionValidation
 }, null, 2) + "\n");
@@ -96,12 +106,27 @@ function values(value) {
 function changedPathsSinceCurrentRelease(cwd, releaseRoot, headSha) {
   const manifestPath = join(releaseRoot, "current", "nadovibe.release.json");
   if (!existsSync(manifestPath)) {
-    return run("git", ["diff", "--name-only", `${headSha}~1`, headSha], cwd).trim().split("\n").filter(Boolean);
+    return [];
   }
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   const currentSha = String(manifest.gitSha ?? "");
   if (!currentSha || currentSha === headSha) return [];
   return run("git", ["diff", "--name-only", currentSha, headSha], cwd).trim().split("\n").filter(Boolean);
+}
+
+function planHasOnlyNoImpactedServices(plan) {
+  return plan?.allowed !== true &&
+    Array.isArray(plan?.issues) &&
+    plan.issues.length === 1 &&
+    plan.issues[0]?.code === "no_impacted_services";
+}
+
+async function readCurrentDeployment(baseUrl) {
+  try {
+    return await getJson(`${baseUrl}/v1/deployments/current`);
+  } catch {
+    return undefined;
+  }
 }
 
 function syncReleaseToCurrent(releaseDir, targetDir) {
