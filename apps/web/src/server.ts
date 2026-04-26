@@ -19,60 +19,77 @@ const buildMetadata = createBuildMetadata("web");
 let codeMirrorVendorCache: Promise<string> | undefined;
 
 const server = http.createServer(async (request, response) => {
-  if (request.url === "/healthz" || request.url === "/readyz") {
+  const url = new URL(request.url ?? "/", "http://127.0.0.1");
+  if (url.pathname === "/healthz" || url.pathname === "/readyz") {
     send(response, 200, "application/json; charset=utf-8", JSON.stringify({ ok: true, service: "web", dependency: "static" }));
     return;
   }
-  if (request.method === "GET" && request.url === "/version") {
+  if (request.method === "GET" && url.pathname === "/version") {
     send(response, 200, "application/json; charset=utf-8", JSON.stringify(buildMetadata));
     return;
   }
-  if (request.url === "/workbench") {
-    send(response, 200, "text/html; charset=utf-8", renderTabletWorkbenchHtml());
+  if (url.pathname === "/workbench") {
+    send(response, 200, "text/html; charset=utf-8", renderTabletWorkbenchHtml(), noStoreHeaders());
     return;
   }
-  if (request.url === "/mobile") {
-    send(response, 200, "text/html; charset=utf-8", renderMobileCommandReviewHtml());
+  if (url.pathname === "/mobile" || (url.pathname === "/" && isMobileUserAgent(request))) {
+    send(response, 200, "text/html; charset=utf-8", renderMobileCommandReviewHtml(), noStoreHeaders());
     return;
   }
-  if (request.url === "/assets/gateway-client.js") {
+  if (url.pathname === "/assets/gateway-client.js") {
     send(response, 200, "text/javascript; charset=utf-8", renderGeneratedGatewayBrowserClient(gatewayBaseUrl));
     return;
   }
-  if (request.url === "/assets/control-room.js") {
+  if (url.pathname === "/assets/control-room.js") {
     send(response, 200, "text/javascript; charset=utf-8", renderControlRoomAppJs());
     return;
   }
-  if (request.url === "/assets/workbench.js") {
+  if (url.pathname === "/assets/workbench.js") {
     send(response, 200, "text/javascript; charset=utf-8", renderTabletWorkbenchAppJs());
     return;
   }
-  if (request.url === "/assets/mobile-command-review.js") {
-    send(response, 200, "text/javascript; charset=utf-8", renderMobileCommandReviewAppJs());
+  if (url.pathname === "/assets/mobile-command-review.js") {
+    send(response, 200, "text/javascript; charset=utf-8", renderMobileCommandReviewAppJs(), noStoreHeaders());
     return;
   }
-  if (request.url === "/assets/codemirror-vendor.js") {
+  if (url.pathname === "/assets/codemirror-vendor.js") {
     send(response, 200, "text/javascript; charset=utf-8", await renderCodeMirrorVendorJs());
     return;
   }
-  if (request.url === "/manifest.webmanifest") {
-    send(response, 200, "application/manifest+json; charset=utf-8", renderManifest());
+  if (url.pathname === "/manifest.webmanifest") {
+    send(response, 200, "application/manifest+json; charset=utf-8", renderManifest(), noStoreHeaders());
     return;
   }
-  if (request.url === "/service-worker.js") {
-    send(response, 200, "text/javascript; charset=utf-8", renderServiceWorker());
+  if (url.pathname === "/service-worker.js") {
+    send(response, 200, "text/javascript; charset=utf-8", renderServiceWorker(), {
+      ...noStoreHeaders(),
+      "service-worker-allowed": "/"
+    });
     return;
   }
-  send(response, 200, "text/html; charset=utf-8", renderControlRoomHtml());
+  send(response, 200, "text/html; charset=utf-8", renderControlRoomHtml(), noStoreHeaders());
 });
 
 server.listen(port, "0.0.0.0", () => {
   process.stdout.write(JSON.stringify({ level: "info", msg: "web listening", port, gatewayBaseUrl }) + "\n");
 });
 
-function send(response: http.ServerResponse, status: number, contentType: string, body: string): void {
-  response.writeHead(status, { "content-type": contentType });
+function send(response: http.ServerResponse, status: number, contentType: string, body: string, headers: Record<string, string> = {}): void {
+  response.writeHead(status, { "content-type": contentType, ...headers });
   response.end(body);
+}
+
+function noStoreHeaders(): Record<string, string> {
+  return {
+    "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    pragma: "no-cache",
+    expires: "0"
+  };
+}
+
+function isMobileUserAgent(request: http.IncomingMessage): boolean {
+  const userAgent = String(request.headers["user-agent"] ?? "");
+  return /Android|iPhone|iPad|Mobile/i.test(userAgent);
 }
 
 function renderCodeMirrorVendorJs(): Promise<string> {

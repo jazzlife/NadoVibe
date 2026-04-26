@@ -444,8 +444,8 @@ export function renderManifest(): string {
 
 export function renderServiceWorker(): string {
   return `
-const CACHE_NAME = 'nadovibe-mobile-chat-ide-v2';
-const SHELL_ASSETS = ['/', '/workbench', '/mobile', '/assets/gateway-client.js', '/assets/control-room.js', '/assets/workbench.js', '/assets/mobile-command-review.js', '/assets/codemirror-vendor.js', '/manifest.webmanifest'];
+const CACHE_NAME = 'nadovibe-mobile-chat-ide-v3';
+const SHELL_ASSETS = ['/mobile', '/assets/gateway-client.js', '/assets/mobile-command-review.js', '/manifest.webmanifest'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS)));
   self.skipWaiting();
@@ -459,7 +459,19 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/')) return;
-  event.respondWith(caches.match(request).then((cached) => cached || fetch(request)));
+  if (request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/mobile' || url.pathname === '/service-worker.js' || url.pathname === '/manifest.webmanifest') {
+    event.respondWith(fetch(request).then((response) => {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      return response;
+    }).catch(() => caches.match(request)));
+    return;
+  }
+  event.respondWith(fetch(request).then((response) => {
+    const copy = response.clone();
+    caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+    return response;
+  }).catch(() => caches.match(request)));
 });
 self.addEventListener('push', (event) => {
   let payload = {};
@@ -1878,7 +1890,7 @@ export function renderMobileCommandReviewAppJs(): string {
       }
     }
     if ('serviceWorker' in navigator) {
-      await navigator.serviceWorker.register('/service-worker.js');
+      await navigator.serviceWorker.register('/service-worker.js?release=mobile-chat-ide-v3');
     }
     state.projection = await client.registerMobilePush({
       workspaceId,
@@ -1989,7 +2001,7 @@ export function renderMobileCommandReviewAppJs(): string {
   });
   $('mobileQuickCommandForm').addEventListener('submit', (event) => submitQuickCommand(event).catch(reportError));
   $('mobileNotificationSettings').addEventListener('submit', (event) => saveNotificationSettings(event).catch(reportError));
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js').catch(() => undefined);
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js?release=mobile-chat-ide-v3').catch(() => undefined);
   load().catch(reportError);
 })();
 `;
