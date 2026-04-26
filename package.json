@@ -20,7 +20,9 @@
     "ops:validate": "node --import tsx scripts/ops-validate.mjs",
     "durability:suite": "node --import tsx scripts/durability-suite.mjs",
     "failure:inject": "node scripts/failure-injection.mjs",
-    "release:prepare": "node scripts/prepare-mounted-release.mjs"
+    "release:prepare": "node scripts/prepare-mounted-release.mjs",
+    "release:deploy": "node scripts/deploy-mounted-release.mjs",
+    "release:deploy:local": "node scripts/deploy-mounted-release.mjs --runtime-root .runtime --profile local"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

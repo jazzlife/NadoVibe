@@ -2,7 +2,7 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { relative, resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 
 const args = parseArgs(process.argv.slice(2));
 const sourceRoot = resolve(String(args.source ?? "."));
@@ -13,6 +13,8 @@ const packageJson = JSON.parse(readFileSync(join(sourceRoot, "package.json"), "u
 const gitSha = String(args["git-sha"] ?? readGitSha(sourceRoot));
 const releaseId = String(args["release-id"] ?? `${new Date().toISOString().replace(/[-:]/g, "").replace(/\..+$/, "")}-${gitSha.slice(0, 7)}`);
 const releaseDir = join(releasesDir, releaseId);
+const installRuntimeDependencies = args["install-runtime-deps"] === true;
+const runtimeInstallImage = String(args["runtime-install-image"] ?? "node:22-alpine");
 
 if (!existsSync(join(sourceRoot, "packages/core-operations/dist/index.js"))) {
   throw new Error("packages/core-operations/dist/index.js is missing. Run `npm run build` before preparing a mounted release.");
@@ -39,11 +41,21 @@ if (!validation.ok) {
 rmSync(releaseDir, { recursive: true, force: true });
 mkdirSync(releaseDir, { recursive: true });
 
-for (const entry of ["package.json", "package-lock.json", "tsconfig.json", "tsconfig.base.json", "apps", "packages", "services", "infra", "node_modules"]) {
+const releaseEntries = ["package.json", "package-lock.json", "tsconfig.json", "tsconfig.base.json", "apps", "packages", "services", "infra"];
+if (!installRuntimeDependencies) {
+  releaseEntries.push("node_modules");
+}
+
+for (const entry of releaseEntries) {
   const source = join(sourceRoot, entry);
   if (!existsSync(source)) continue;
   cpSync(source, join(releaseDir, entry), { recursive: true, dereference: false, filter: copyFilter });
 }
+
+if (installRuntimeDependencies) {
+  execFileSync("docker", ["run", "--rm", "-v", `${releaseDir}:/app`, "-w", "/app", runtimeInstallImage, "npm", "ci"], { stdio: "inherit" });
+}
+
 repairWorkspaceSymlinks(releaseDir);
 writeFileSync(join(releaseDir, "nadovibe.release.json"), JSON.stringify(manifest, null, 2) + "\n");
 
